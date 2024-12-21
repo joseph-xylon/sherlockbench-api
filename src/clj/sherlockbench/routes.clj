@@ -12,7 +12,9 @@
             [ring.middleware.session.memory :as memory]
             [clojure.spec.alpha :as s]
             [sherlockbench.handlers :as hl]
-            [ring.logger :as logger]))
+            [sherlockbench.api :as api]
+            [ring.logger :as logger]
+            [clojure.data.json :as json]))
 
 (s/def ::id int?)
 (s/def ::string string?)
@@ -30,6 +32,10 @@
         {:status 303
          :headers {"Location" (str "/login?redirect=" redirect-url)}
          :body ""}))))
+
+(defn convert-to-json [handler]
+  (fn [request]
+    (update (handler request) :body json/write-str)))
 
 (defn app
   "reitit with format negotiation and input & output coercion"
@@ -51,7 +57,17 @@
 
        ["/public/*path" {:get {:middleware [wrap-content-type
                                             [wrap-resource ""]]
-                               :handler hl/not-found-handler}}]]
+                               :handler hl/not-found-handler}}]
+
+       ;; API
+       ["/api/"
+        {:middleware [convert-to-json]}
+        ["start-run"
+         {:get {:handler api/start-anonymous-run}}]
+
+
+
+        ]]
 
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion

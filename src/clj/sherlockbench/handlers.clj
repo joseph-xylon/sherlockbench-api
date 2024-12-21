@@ -11,11 +11,11 @@
    :body (ph/render-message "Page Not Found")})
 
 (defn home-handler
-  "display the list of questions"
+  "home"
   [{queryfn :queryfn}]
   {:status 200
    :headers {"Content-Type" "text/html"}
-   :body (ph/render-message "Hello World!")})
+   :body (ph/render-message "The SherlockBench API is hosted here.")})
 
 (defn login-handler
   "show the login prompt. the parameter variable holds the url the user was trying
