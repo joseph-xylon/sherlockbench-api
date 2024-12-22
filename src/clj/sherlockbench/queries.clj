@@ -55,3 +55,23 @@
        (returning :id))
 
    #(:attempts/id (first %))])
+
+(defn check-run
+  "return true or false indicating if they have a valid run_id"
+  [run-id]
+  [(-> (select [:*])
+       (from :runs)
+       (where [:and
+               [:= :id [:cast run-id :uuid]]
+               [:> [:+ :datetime_start [:interval "1 day"]] [:now]]]))
+
+   #(not (empty? %))])
+
+(defn get-fn-name
+  "Given an attempt UUID, returns the associated function_name."
+  [attempt-id]
+  [(-> (select [:function_name])
+       (from :attempts)
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   #(:attempts/function_name (first %))])

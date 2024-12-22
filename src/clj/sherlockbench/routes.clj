@@ -13,11 +13,23 @@
             [clojure.spec.alpha :as s]
             [sherlockbench.handlers :as hl]
             [sherlockbench.api :as api]
+            [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap]]
             [ring.logger :as logger]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.string :as string]))
 
 (s/def ::id int?)
 (s/def ::string string?)
+
+(s/def ::anything-collection (s/coll-of any?))
+
+(defn valid-uuid? [uuid]
+  (try
+    (java.util.UUID/fromString uuid)
+    true
+    (catch IllegalArgumentException _ false)))
+
+(s/def ::uuid (s/and string? valid-uuid?))
 
 (defn wrap-auth [handler]
   (fn [{:keys [uri query-string session] :as request}]
@@ -37,6 +49,18 @@
   (fn [request]
     (update (handler request) :body json/write-str)))
 
+(defn conform-to-vector [x]
+  (if (vector? x)
+    x
+    [x]))
+
+(defn wrap-vector
+  "ring can't handle post params which may or may not be a list so I have to fix
+   it manually with a middleware"
+  [handler key]
+  (fn [request]
+    (handler (update-in request key conform-to-vector))))
+
 (defn app
   "reitit with format negotiation and input & output coercion"
   [queryfn]
@@ -49,15 +73,18 @@
     (ring/ring-handler
      (ring/router
       [["/" {:handler hl/home-handler}]
-       ["/login" {:get {:handler hl/login-handler}
+       ["/web/"
+        {:middleware [[wrap-session {:store session-store}]
+                      wrap-anti-forgery]}
+        ["login" {:get {:handler hl/login-handler}
                   :post {:handler hl/login-post-handler
                          :parameters {:form {:username ::string
                                              :password ::string}}}}]
-       ["/logout" {:get {:handler hl/logout-handler}}]
+        ["logout" {:get {:handler hl/logout-handler}}]
 
-       ["/public/*path" {:get {:middleware [wrap-content-type
+        ["public/*path" {:get {:middleware [wrap-content-type
                                             [wrap-resource ""]]
-                               :handler hl/not-found-handler}}]
+                                :handler hl/not-found-handler}}]]
 
        ;; API
        ["/api/"
@@ -65,7 +92,15 @@
         ["start-run"
          {:get {:handler api/start-anonymous-run}}]
 
+        ["test-function"
+         {:post {:handler api/test-function
+                 :middleware [api/wrap-check-run
+                              api/wrap-validate-args]
+                 :parameters {:form {:run-id ::uuid
+                                     :attempt-id ::uuid
+                                     :args ::anything-collection}}
 
+                 }}]
 
         ]]
 
@@ -73,11 +108,10 @@
       {:data {:coercion   reitit.coercion.spec/coercion
               :muuntaja   m/instance
               :middleware [parameters/parameters-middleware
+                           [wrap-vector [:form-params "args"]]
                            rrc/coerce-request-middleware
                            muuntaja/format-response-middleware
                            rrc/coerce-response-middleware
                            logger/wrap-with-logger
-                           wrap-query-builder
-                           [wrap-session {:store session-store}]
-                           wrap-anti-forgery]}})
+                           wrap-query-builder]}})
     hl/not-found-handler)))
