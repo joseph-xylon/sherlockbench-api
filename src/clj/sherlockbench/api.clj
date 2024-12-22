@@ -64,12 +64,19 @@
     fn-name :fn-name
     {{:keys [attempt-id]} :form} :parameters}]
 
-  (let [call-count (queryfn (q/increment-fn-calls attempt-id))]
-    (if (> call-count msg-limit)
+  (let [call-count (queryfn (q/increment-fn-calls attempt-id))
+        started-verifications (queryfn (q/started-verifications? attempt-id))]
+    (cond
+      (> call-count msg-limit)
       {:status 400
        :headers {"Content-Type" "application/json"}
        :body {:error (format "you have reached the test limit of %d for this problem" msg-limit)}}
-
+      (true? started-verifications)
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body {:error "you cannot test the function after you start the validations"}}
+      
+      :else
       (let [problem (get-problem-by-name fn-name)
             output (try (apply (:function problem) validated-args)
                         (catch Exception e

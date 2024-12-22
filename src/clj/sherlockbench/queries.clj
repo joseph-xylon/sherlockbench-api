@@ -85,3 +85,12 @@
        (returning :fn_calls))
 
    #(:attempts/fn_calls (first %))])
+
+(defn started-verifications?
+  "Given an attempt UUID, returns if it started verifications yet."
+  [attempt-id]
+  [(-> (select [:started_verifications])
+       (from :attempts)
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   #(:attempts/started_verifications (first %))])

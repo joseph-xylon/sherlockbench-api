@@ -24,6 +24,8 @@
     nil))
 
 (defn validate-and-coerce [pattern values]
+  ;; (prn "pattern: " pattern)
+  ;; (prn "values: " values)
   (if-not (= (count pattern) (count values))
     {:valid? false :coerced nil}
     (let [coerced (mapv coerce-value pattern values)]
