@@ -30,4 +30,10 @@
                 (* a c))
     :verifications [[3, 2, 9], [4, 5, 2], [0, 9, 3]]
     :tags #{:demo :easy3}}
+
+   {:name- "integer division"
+    :args ["integer" "integer"]
+    :function quot
+    :verifications [[7, 2] [15, 3] [1, 2]]
+    :tags #{:demo}}
    ])

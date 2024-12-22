@@ -1,4 +1,5 @@
-(ns sherlockbench.debug-middlewares)
+(ns sherlockbench.debug-middlewares
+  (:require [clojure.string :as string]))
 
 (defn wrap-debug-reqmap
   "debug middleware to save the requestmap to a file so we can analyze"

@@ -15,8 +15,7 @@
             [sherlockbench.api :as api]
             [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap]]
             [ring.logger :as logger]
-            [clojure.data.json :as json]
-            [clojure.string :as string]))
+            [clojure.data.json :as json]))
 
 (s/def ::id int?)
 (s/def ::string string?)

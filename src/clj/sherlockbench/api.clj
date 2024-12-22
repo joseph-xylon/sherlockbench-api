@@ -14,6 +14,7 @@
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
                    {:attempt-id attempt
                     :fn-args (:args p)})]
+
    {:status 200
     :headers {"Content-Type" "application/json"}
     :body {:run-id run-id
@@ -33,28 +34,47 @@
        :headers {"Content-Type" "application/json"}
        :body {:error "your run appears to be invalid or expired"}})))
 
+(defn get-problem-by-name
+  [fn-name]
+  (first (filter #(= fn-name (:name- %)) problems)))
+
 (defn wrap-validate-args
   "a middleware to validate the args of a test function"
   [handler]
   (fn [{queryfn :queryfn
         {{:keys [run-id args attempt-id]} :form} :parameters :as request}]
     (let [fn-name (queryfn (q/get-fn-name attempt-id))
-          this-problem (first (filter #(= fn-name (:name- %)) problems))
+          this-problem (get-problem-by-name fn-name)
           {:keys [valid? coerced]} (validate-and-coerce (:args this-problem) args)]
       (if valid?
-        ; add the validated args and continue
-        (handler (assoc request :validated-args coerced))
+        ;; add the validated args and continue
+        (handler (assoc request
+                        :validated-args coerced
+                        :fn-name fn-name))
 
-        ; break as these args are invalid
+        ;; break as these args are invalid
         {:status 400
          :headers {"Content-Type" "application/json"}
-         :body {:error "your arguments don't comply with the schema"}}
-        ))))
+         :body {:error "your arguments don't comply with the schema"}}))))
 
 (defn test-function
   "run the test"
-  [{queryfn :queryfn}]
-  (let []
-   {:status 200
-    :headers {"Content-Type" "application/json"}
-    :body {:foo "bar"}}))
+  [{queryfn :queryfn
+    validated-args :validated-args
+    fn-name :fn-name
+    {{:keys [attempt-id]} :form} :parameters}]
+
+  (let [call-count (queryfn (q/increment-fn-calls attempt-id))]
+    (if (> call-count msg-limit)
+      {:status 400
+       :headers {"Content-Type" "application/json"}
+       :body {:error (format "you have reached the test limit of %d for this problem" msg-limit)}}
+
+      (let [problem (get-problem-by-name fn-name)
+            output (try (apply (:function problem) validated-args)
+                        (catch Exception e
+                          "Exception"))]
+
+        {:status 200
+         :headers {"Content-Type" "application/json"}
+         :body {:output output}}))))

@@ -75,3 +75,13 @@
        (where [:= :id [:cast attempt-id :uuid]]))
 
    #(:attempts/function_name (first %))])
+
+(defn increment-fn-calls
+  "Increments the fn_calls column for a given attempt ID."
+  [attempt-id]
+  [(-> (update :attempts)
+       (set {:fn_calls [:+ :fn_calls 1]})
+       (where [:= :id [:cast attempt-id :uuid]])
+       (returning :fn_calls))
+
+   #(:attempts/fn_calls (first %))])
