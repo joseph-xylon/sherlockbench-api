@@ -24,7 +24,7 @@
   "did they give us a valid run id?"
   [handler]
   (fn [{queryfn :queryfn
-        {{:keys [run-id]} :form} :parameters :as request}]
+        {:keys [run-id]} :body :as request}]
     (if (queryfn (q/check-run run-id))
       ;; continue as if nothing happened
       (handler request)
@@ -42,7 +42,7 @@
   "a middleware to validate the args of a test function"
   [handler]
   (fn [{queryfn :queryfn
-        {{:keys [run-id args attempt-id]} :form} :parameters :as request}]
+        {:keys [run-id args attempt-id]} :body :as request}]
     (let [fn-name (queryfn (q/get-fn-name attempt-id))
           this-problem (get-problem-by-name fn-name)
           {:keys [valid? coerced]} (validate-and-coerce (:args this-problem) args)]
@@ -62,7 +62,7 @@
   [{queryfn :queryfn
     validated-args :validated-args
     fn-name :fn-name
-    {{:keys [attempt-id]} :form} :parameters}]
+    {:keys [attempt-id]} :body}]
 
   (let [call-count (queryfn (q/increment-fn-calls attempt-id))
         started-verifications (queryfn (q/started-verifications? attempt-id))]

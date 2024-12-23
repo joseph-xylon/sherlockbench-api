@@ -10,6 +10,7 @@
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.session.memory :as memory]
+            [ring.middleware.json :refer [wrap-json-body]]
             [clojure.spec.alpha :as s]
             [sherlockbench.handlers :as hl]
             [sherlockbench.api :as api]
@@ -44,21 +45,21 @@
          :headers {"Location" (str "/login?redirect=" redirect-url)}
          :body ""}))))
 
-(defn convert-to-json [handler]
+(defn output-to-json [handler]
   (fn [request]
     (update (handler request) :body json/write-str)))
 
-(defn conform-to-vector [x]
-  (if (vector? x)
-    x
-    [x]))
-
-(defn wrap-vector
-  "ring can't handle post params which may or may not be a list so I have to fix
-   it manually with a middleware"
-  [handler key]
+(defn wrap-validate-body [handler]
   (fn [request]
-    (handler (update-in request key conform-to-vector))))
+    (let [validation (get-in request [:reitit.core/match :data :post :validation])
+          body (:body request)]
+      (if (or (nil? validation)
+              (s/valid? (s/keys :req-un (keys validation)) body))
+        (handler request)
+        {:status 400
+         :headers {"Content-Type" "application/json"}
+         :body {:error "Request body does not conform to the expected schema."
+                :problems (s/explain-data (s/keys :req-un (keys validation)) body)}}))))
 
 (defn app
   "reitit with format negotiation and input & output coercion"
@@ -87,7 +88,7 @@
 
        ;; API
        ["/api/"
-        {:middleware [convert-to-json]}
+        {:middleware [output-to-json]}
         ["start-run"
          {:get {:handler api/start-anonymous-run}}]
 
@@ -95,9 +96,9 @@
          {:post {:handler api/test-function
                  :middleware [api/wrap-check-run
                               api/wrap-validate-args]
-                 :parameters {:form {:run-id ::uuid
-                                     :attempt-id ::uuid
-                                     :args ::anything-collection}}
+                 :validation {:run-id ::uuid
+                              :attempt-id ::uuid
+                              :args ::anything-collection}
 
                  }}]
 
@@ -107,8 +108,8 @@
       {:data {:coercion   reitit.coercion.spec/coercion
               :muuntaja   m/instance
               :middleware [parameters/parameters-middleware
-                           [wrap-vector [:form-params "args"]]
-                           rrc/coerce-request-middleware
+                           [wrap-json-body {:keywords? true}]
+                           wrap-validate-body
                            muuntaja/format-response-middleware
                            rrc/coerce-response-middleware
                            logger/wrap-with-logger
