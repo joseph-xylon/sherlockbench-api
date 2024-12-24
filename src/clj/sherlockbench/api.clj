@@ -180,3 +180,20 @@
              :headers {"Content-Type" "application/json"}
              :body {:status "done"
                     :next-verification nil}}))))))
+
+(defn complete-run
+  "They tell us they have completed the run."
+  [{queryfn :queryfn
+    fn-name :fn-name
+    {:keys [run-id]} :body}]
+  (let [total-run-time (queryfn (q/get-run-time run-id))
+        {:keys [numerator denominator] :as final-score} (queryfn (q/get-final-score run-id))
+        score-percent (double (* 100 (/ numerator denominator)))]
+    (queryfn (q/save-results! run-id total-run-time final-score score-percent))
+    
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body {:run-time (str total-run-time)
+            :score final-score
+            :percent score-percent}}
+    ))

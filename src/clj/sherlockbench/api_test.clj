@@ -28,12 +28,13 @@
 
 (comment
   (get-api "start-run")
-  (post-api "test-function" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
-                             :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"
-                             :args [6, 4, 6]})
-  (post-api "next-verification" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
-                                 :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"})
-  (post-api "attempt-verification" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
-                                    :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"
-                                    :prediction 0})
+  (post-api "test-function" {:run-id "0f5014bc-be55-452f-a75e-4dbda88102e1"
+                             :attempt-id "4ada1e8f-4881-42ab-9a6d-ea6fe1728800"
+                             :args [9, 2]})
+  (post-api "next-verification" {:run-id "0f5014bc-be55-452f-a75e-4dbda88102e1"
+                                 :attempt-id "4ada1e8f-4881-42ab-9a6d-ea6fe1728800"})
+  (post-api "attempt-verification" {:run-id "0f5014bc-be55-452f-a75e-4dbda88102e1"
+                                    :attempt-id "4ada1e8f-4881-42ab-9a6d-ea6fe1728800"
+                                    :prediction 5})
+  (post-api "complete-run" {:run-id "0f5014bc-be55-452f-a75e-4dbda88102e1"})
   )

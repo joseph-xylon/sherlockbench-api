@@ -120,7 +120,10 @@
                               :attempt-id ::uuid
                               :prediction ::anything}}}]
 
-        ]]
+        ["complete-run"
+         {:post {:handler api/complete-run
+                 :middleware [api/wrap-check-run]
+                 :validation {:run-id ::uuid}}}]]]
 
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion

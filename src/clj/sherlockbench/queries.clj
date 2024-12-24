@@ -11,12 +11,14 @@
 
 ;; the core namespace will closure over this with the connection
 (defn execute-query
-  "takes a connection, a HoneySQL query, and a post-processor function"
-  [conn [query processor] & [debug]]
-  (let [formatted-query (sql/format query)]
-    (when debug (println (str "formatted-query: " formatted-query)))
-    (-> (jdbc/execute! conn formatted-query)
-        processor)))
+  "takes a connection, one or more HoneySQL queries, and a post-processor function"
+  [conn qdata & [debug]]
+  (let [[processor & queries] (reverse qdata)
+        formatted-queries (map sql/format (reverse queries))]
+    (when debug (doseq [formatted-query formatted-queries]
+                    (println (str "formatted-query: " formatted-query))))
+
+    (apply processor (map #(jdbc/execute! conn %) formatted-queries))))
 
 (defn create-user
   "hashes the password"
@@ -63,7 +65,8 @@
        (from :runs)
        (where [:and
                [:= :id [:cast run-id :uuid]]
-               [:> [:+ :datetime_start [:interval "1 day"]] [:now]]]))
+               [:> [:+ :datetime_start [:interval "1 day"]] [:now]]
+               [:= :final_score nil]]))
 
    #(not (empty? %))])
 
@@ -141,8 +144,7 @@
              :verifications [:cast (json/write-str nil) :jsonb]})
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   identity]
-  )
+   identity])
 
 (defn attempt-success!
   "Given an attempt UUID, set the attempt succeeded."
@@ -151,5 +153,36 @@
        (set {:result_value "success"})
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   identity]
-  )
+   identity])
+
+(defn get-run-time
+  [run-id]
+  [(-> (select :datetime_start [[:age [:now] :datetime_start] :total_run_time])
+       (from :runs)
+       (where [:= :id [:cast run-id :uuid]]))
+
+   #(:total_run_time (first %))])
+
+(defn get-final-score
+  [run-id]
+  [(-> (select [[:count :*] :count])
+       (from :attempts)
+       (where [:and
+               [:= :run_id [:cast run-id :uuid]]
+               [:= :result_value "success"]]))
+
+   (-> (select [[:count :*] :count])
+       (from :attempts)
+       (where [:= :run_id [:cast run-id :uuid]]))
+
+   #(hash-map :numerator (:count (first %1)) :denominator (:count (first %2)))])
+
+(defn save-results!
+  [run-id total-run-time final-score score-percent]
+  [(-> (update :runs)
+       (set {:total_run_time total-run-time
+             :final_score [:cast (json/write-str final-score) :jsonb]
+             :score_percent score-percent})
+       (where [:= :id [:cast run-id :uuid]]))
+
+   identity])
