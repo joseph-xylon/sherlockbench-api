@@ -39,8 +39,8 @@
 
  (validate-and-coerce pattern input)
 
- (def pattern2 ["boolean" "boolean" "boolean"])
- (def input2 ["true" "false" "maybe"])
+ (def pattern2 ["boolean" "boolean"])
+ (def input2 ["true" "false"])
 
  (validate-and-coerce pattern2 input2)
 

@@ -76,6 +76,17 @@
 
    #(:attempts/function_name (first %))])
 
+(defn attempt-valid?
+  "given both a run id and attempt id, check the attempt id matches to the run"
+  [run-id attempt-id]
+  [(-> (select [:*])
+       (from :attempts)
+       (where [:and
+               [:= :run-id [:cast run-id :uuid]]
+               [:= :id [:cast attempt-id :uuid]]]))
+
+   #(not (empty? %))])
+
 (defn increment-fn-calls
   "Increments the fn_calls column for a given attempt ID."
   [attempt-id]
@@ -94,3 +105,51 @@
        (where [:= :id [:cast attempt-id :uuid]]))
 
    #(:attempts/started_verifications (first %))])
+
+(defn get-verifications
+  "Given an attempt UUID, returns the associated validations"
+  [attempt-id]
+  [(-> (select [:verifications])
+       (from :attempts)
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   #(json/read-str (.getValue (:attempts/verifications (first %))))])
+
+(defn started-verifications!
+  "Given an attempt UUID, set the started_verifications field."
+  [attempt-id]
+  [(-> (update :attempts)
+       (set {:started_verifications true})
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   identity])
+
+(defn save-verifications!
+  "Given an attempt UUID, set the started_verifications field."
+  [attempt-id v]
+  [(-> (update :attempts)
+       (set {:verifications [:cast (json/write-str v) :jsonb]})
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   identity])
+
+(defn attempt-failure!
+  "Given an attempt UUID, set the attempt failed."
+  [attempt-id]
+  [(-> (update :attempts)
+       (set {:result_value "failure"
+             :verifications [:cast (json/write-str nil) :jsonb]})
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   identity]
+  )
+
+(defn attempt-success!
+  "Given an attempt UUID, set the attempt succeeded."
+  [attempt-id]
+  [(-> (update :attempts)
+       (set {:result_value "success"})
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   identity]
+  )

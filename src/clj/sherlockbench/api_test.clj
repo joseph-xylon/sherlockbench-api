@@ -28,7 +28,12 @@
 
 (comment
   (get-api "start-run")
-  (post-api "test-function" {:run-id "09028003-98aa-4e3f-b865-3426b300b629"
-                             :attempt-id "95333c77-e1e9-4cd2-a8a8-7024e4f547b4"
-                             :args [9 4]})
+  (post-api "test-function" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
+                             :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"
+                             :args [6, 4, 6]})
+  (post-api "next-verification" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
+                                 :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"})
+  (post-api "attempt-verification" {:run-id "fe476037-adcb-49e2-9df9-d83fe908b332"
+                                    :attempt-id "afbc6ae7-aae9-4f1a-a232-d5132a89ff43"
+                                    :prediction 0})
   )

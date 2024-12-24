@@ -20,7 +20,7 @@
 
 (s/def ::id int?)
 (s/def ::string string?)
-
+(s/def ::anything any?)
 (s/def ::anything-collection (s/coll-of any?))
 
 (defn valid-uuid? [uuid]
@@ -95,12 +95,30 @@
         ["test-function"
          {:post {:handler api/test-function
                  :middleware [api/wrap-check-run
+                              api/wrap-check-attempt
                               api/wrap-validate-args]
                  :validation {:run-id ::uuid
                               :attempt-id ::uuid
                               :args ::anything-collection}
 
                  }}]
+
+        ["next-verification"
+         {:post {:handler api/next-verification
+                 :middleware [api/wrap-check-run
+                              api/wrap-check-attempt
+                              api/wrap-record-started]
+                 :validation {:run-id ::uuid
+                              :attempt-id ::uuid}}}]
+
+        ["attempt-verification"
+         {:post {:handler api/attempt-verification
+                 :middleware [api/wrap-check-run
+                              api/wrap-check-attempt
+                              api/wrap-record-started]
+                 :validation {:run-id ::uuid
+                              :attempt-id ::uuid
+                              :prediction ::anything}}}]
 
         ]]
 
