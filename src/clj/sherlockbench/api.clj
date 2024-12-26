@@ -128,16 +128,19 @@
 
   (queryfn (q/started-verifications! attempt-id)) ; record we've started
 
-  (let [next-verification (first (queryfn (q/get-verifications attempt-id)))]
+  (let [next-verification (first (queryfn (q/get-verifications attempt-id)))
+        output-type (:output-type (get-problem-by-name fn-name))]
     (if (nil? next-verification)
       {:status 200
        :headers {"Content-Type" "application/json"}
        :body {:status "done"
-              :next-verification nil}}
+              :next-verification nil
+              :output-type output-type}}
       {:status 200
        :headers {"Content-Type" "application/json"}
        :body {:status "success"
-              :next-verification next-verification}})))
+              :next-verification next-verification
+              :output-type output-type}})))
 
 (defn =normalized
   "normalize everything to a string for comparrison"

@@ -8,6 +8,7 @@
     :args ["integer" "integer"]
     :function -
     :verifications [[10, 2], [7, 5], [1, 0]]
+    :output-type "integer"
     :tags #{:demo :easy3}}
 
    {:name- "is prime"
@@ -22,6 +23,7 @@
                     (not-any? #(zero? (mod n %))
                               (range 3 (inc (int sqrt-n)) 2)))))
     :verifications [[2] [7] [4] [1] [13] [25]]
+    :output-type "boolean"
     :tags #{:demo :easy3}}
 
    {:name- "ignore one"
@@ -29,11 +31,13 @@
     :function (fn [a b c]
                 (* a c))
     :verifications [[3, 2, 9], [4, 5, 2], [0, 9, 3]]
+    :output-type "integer"
     :tags #{:demo :easy3}}
 
    {:name- "integer division"
     :args ["integer" "integer"]
     :function quot
     :verifications [[7, 2] [15, 3] [1, 2]]
+    :output-type "integer"
     :tags #{:demo}}
    ])
