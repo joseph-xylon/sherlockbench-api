@@ -4,4 +4,6 @@
 /reqlog/
 /log
 /node_modules/
+/src/clj/extra/
 db-credentials.edn
+config.edn

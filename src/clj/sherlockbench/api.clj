@@ -1,13 +1,13 @@
 (ns sherlockbench.api
   (:require [sherlockbench.config :refer [benchmark-version msg-limit]]
             [sherlockbench.queries :as q]
-            [sherlockbench.problems :refer [problems]]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]))
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
-  [{queryfn :queryfn}]
+  [{queryfn :queryfn
+    problems :problems}]
   (let [; get the pertinent subset of the problems and randomize the order
         problems' (shuffle (filter #(:demo (:tags %)) problems))
         run-id (queryfn (q/create-run! benchmark-version msg-limit))
@@ -51,16 +51,17 @@
        :body {:error "your attempt-id doesn't match your run-id"}})))
 
 (defn get-problem-by-name
-  [fn-name]
+  [problems fn-name]
   (first (filter #(= fn-name (:name- %)) problems)))
 
 (defn wrap-validate-args
   "a middleware to validate the args of a test function"
   [handler]
   (fn [{queryfn :queryfn
+        problems :problems
         {:keys [run-id attempt-id args]} :body
         fn-name :fn-name :as request}]
-    (let [this-problem (get-problem-by-name fn-name)
+    (let [this-problem (get-problem-by-name problems fn-name)
           {:keys [valid? coerced]} (validate-and-coerce (:args this-problem) args)]
       (if valid?
         ;; add the validated args and continue
@@ -82,6 +83,7 @@
 (defn test-function
   "run the test"
   [{queryfn :queryfn
+    problems :problems
     validated-args :validated-args
     fn-name :fn-name
     {:keys [attempt-id]} :body}]
@@ -99,7 +101,7 @@
        :body {:error "you cannot test the function after you start the validations"}}
       
       :else
-      (let [problem (get-problem-by-name fn-name)
+      (let [problem (get-problem-by-name problems fn-name)
             output (apply-fn problem validated-args)]
 
         {:status 200
@@ -124,12 +126,13 @@
   "just give them the next verification for their attempt"
   [{queryfn :queryfn
     fn-name :fn-name
+    problems :problems
     {:keys [attempt-id]} :body}]
 
   (queryfn (q/started-verifications! attempt-id)) ; record we've started
 
   (let [next-verification (first (queryfn (q/get-verifications attempt-id)))
-        output-type (:output-type (get-problem-by-name fn-name))]
+        output-type (:output-type (get-problem-by-name problems fn-name))]
     (if (nil? next-verification)
       {:status 200
        :headers {"Content-Type" "application/json"}
@@ -151,9 +154,10 @@
   "let the client attempt a verification"
   [{queryfn :queryfn
     fn-name :fn-name
+    problems :problems
     {:keys [attempt-id prediction]} :body}]
 
-  (let [problem (get-problem-by-name fn-name)
+  (let [problem (get-problem-by-name problems fn-name)
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
       {:status 400

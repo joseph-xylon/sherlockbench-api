@@ -1,10 +1,13 @@
 {:credentials/db {:file-path "env/dev/resources/db-credentials.edn"}
 
+ :sherlockbench/config {:file-path "resources/config.edn"}
+
  :db.sql/connection {:db-credentials #ig/ref :credentials/db}
 
  :sherlockbench/queryfn {:database #ig/ref :db.sql/connection}
  
- :sherlockbench/handler {:queryfn #ig/ref :sherlockbench/queryfn}
+ :sherlockbench/handler {:queryfn #ig/ref :sherlockbench/queryfn
+                         :config #ig/ref :sherlockbench/config}
 
  :migratus/config (:database #ig/ref :db.sql/connection)
 

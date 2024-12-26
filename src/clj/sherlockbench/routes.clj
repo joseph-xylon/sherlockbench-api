@@ -61,14 +61,40 @@
          :body {:error "Request body does not conform to the expected schema."
                 :problems (s/explain-data (s/keys :req-un (keys validation)) body)}}))))
 
+(defn load-problems
+  "Safely load the problems from a namespace"
+  [ns]
+  (try
+    (require ns)
+    (let [problems-symbol (ns-resolve ns 'problems)]
+      (if problems-symbol
+        (do (prn ns)
+          @problems-symbol)
+        (do
+          (println "Namespace" ns "does not define 'problems'")
+          [])))
+    (catch Exception e
+      (println "Failed to load problems from" ns ":" (.getMessage e))
+      [])))
+
+(defn aggregate-problems
+  "Combine all problems from the namespaces"
+  [namespaces]
+  (apply concat (map load-problems (conj namespaces 'sherlockbench.problems))))
+
 (defn app
   "reitit with format negotiation and input & output coercion"
-  [queryfn]
+  [queryfn config]
   ;; we define a middleware that includes our query builder
   (let [wrap-query-builder (fn [handler]
                              (fn [request]
                                (handler (assoc request :queryfn queryfn))))
+        problems (aggregate-problems (:extra-namespaces config))
+        wrap-problems (fn [handler]
+                        (fn [request]
+                          (handler (assoc request :problems problems))))
         session-store (memory/memory-store)]
+    
 
     (ring/ring-handler
      (ring/router
@@ -84,11 +110,12 @@
 
         ["public/*path" {:get {:middleware [wrap-content-type
                                             [wrap-resource ""]]
-                                :handler hl/not-found-handler}}]]
+                               :handler hl/not-found-handler}}]]
 
        ;; API
        ["/api/"
-        {:middleware [output-to-json]}
+        {:middleware [output-to-json
+                      wrap-problems]}
         ["start-run"
          {:get {:handler api/start-anonymous-run}}]
 
@@ -135,4 +162,4 @@
                            rrc/coerce-response-middleware
                            logger/wrap-with-logger
                            wrap-query-builder]}})
-    hl/not-found-handler)))
+     hl/not-found-handler)))

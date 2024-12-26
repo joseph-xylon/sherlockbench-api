@@ -22,6 +22,9 @@
 (defmethod ig/init-key :credentials/db [_ {:keys [file-path]}]
   (read-edn-file file-path))
 
+(defmethod ig/init-key :sherlockbench/config [_ {:keys [file-path]}]
+  (read-edn-file file-path))
+
 ;; db connection
 (defn connect-db
   "reads the credentials and returns a connection object"
@@ -37,8 +40,8 @@
   (.close conn))
 
 ;; handler
-(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn]}]
-  (routes/app queryfn))
+(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config]}]
+  (routes/app queryfn config))
 
 ;; query builder
 (defmethod ig/init-key :sherlockbench/queryfn [_ {:keys [database]}]
