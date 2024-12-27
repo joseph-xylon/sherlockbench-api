@@ -137,8 +137,7 @@
       {:status 200
        :headers {"Content-Type" "application/json"}
        :body {:status "done"
-              :next-verification nil
-              :output-type output-type}}
+              :next-verification nil}}
       {:status 200
        :headers {"Content-Type" "application/json"}
        :body {:status "success"
@@ -158,6 +157,7 @@
     {:keys [attempt-id prediction]} :body}]
 
   (let [problem (get-problem-by-name problems fn-name)
+        output-type (:output-type problem)
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
       {:status 400
@@ -170,7 +170,8 @@
             {:status 200
              :headers {"Content-Type" "application/json"}
              :body {:status "correct"
-                    :next-verification (first remaining-verifications)}}
+                    :next-verification (first remaining-verifications)
+                    :output-type output-type}}
 
             ;; all done
             (do
