@@ -8,7 +8,9 @@
 (defn coerce-boolean [s]
   (case s
     "true" true
+    "True" true
     "false" false
+    "False" false
     nil))
 
 (defn coerce-string [s]

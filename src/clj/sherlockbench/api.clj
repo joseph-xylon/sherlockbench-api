@@ -9,7 +9,7 @@
   [{queryfn :queryfn
     problems :problems}]
   (let [; get the pertinent subset of the problems and randomize the order
-        problems' (shuffle (filter #(:demo (:tags %)) problems))
+        problems' (filter #(:demo (:tags %)) problems)
         run-id (queryfn (q/create-run! benchmark-version msg-limit))
         attempts (for [p problems'      ; 1 attempt per problem
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
@@ -20,6 +20,12 @@
     :headers {"Content-Type" "application/json"}
     :body {:run-id run-id
            :attempts attempts}}))
+
+(defn start-competition-run
+  "in this one we will use an pre-existing run-id. and we will shuffle the problems"
+  []
+  true
+  )
 
 (defn wrap-check-run
   "did they give us a valid run id?"
