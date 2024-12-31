@@ -2,7 +2,8 @@
   (:require [sherlockbench.config :refer [benchmark-version msg-limit]]
             [sherlockbench.queries :as q]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.tools.logging :as log]))
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
@@ -68,7 +69,7 @@
         {:keys [run-id attempt-id args]} :body
         fn-name :fn-name :as request}]
     (let [this-problem (get-problem-by-name problems fn-name)
-          {:keys [valid? coerced]} (validate-and-coerce (:args this-problem) args)]
+          {:keys [valid? coerced errors]} (validate-and-coerce (:args this-problem) args)]
       (if valid?
         ;; add the validated args and continue
         (handler (assoc request
@@ -76,9 +77,12 @@
                         :fn-name fn-name))
 
         ;; break as these args are invalid
-        {:status 400
-         :headers {"Content-Type" "application/json"}
-         :body {:error "your arguments don't comply with the schema"}}))))
+        (do
+          (log/info errors)
+
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body {:error "your arguments don't comply with the schema"}})))))
 
 (defn apply-fn
   [problem validated-args]
