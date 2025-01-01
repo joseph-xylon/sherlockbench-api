@@ -20,6 +20,7 @@
    {:status 200
     :headers {"Content-Type" "application/json"}
     :body {:run-id run-id
+           :benchmark-version benchmark-version
            :attempts attempts}}))
 
 (defn start-competition-run
@@ -196,7 +197,7 @@
             (queryfn (q/attempt-failure! attempt-id))
             {:status 200
              :headers {"Content-Type" "application/json"}
-             :body {:status "done"
+             :body {:status "wrong"
                     :next-verification nil}}))))))
 
 (defn complete-run
