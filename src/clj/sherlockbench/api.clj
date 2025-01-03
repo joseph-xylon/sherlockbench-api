@@ -17,11 +17,11 @@
                    {:attempt-id attempt
                     :fn-args (:args p)})]
 
-   {:status 200
-    :headers {"Content-Type" "application/json"}
-    :body {:run-id run-id
-           :benchmark-version benchmark-version
-           :attempts attempts}}))
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body {:run-id run-id
+            :benchmark-version benchmark-version
+            :attempts attempts}}))
 
 (defn start-competition-run
   "in this one we will use an pre-existing run-id. and we will shuffle the problems"
@@ -207,12 +207,14 @@
     {:keys [run-id]} :body}]
   (let [total-run-time (queryfn (q/get-run-time run-id))
         {:keys [numerator denominator] :as final-score} (queryfn (q/get-final-score run-id))
-        score-percent (double (* 100 (/ numerator denominator)))]
+        score-percent (double (* 100 (/ numerator denominator)))
+        problem-names (queryfn (q/get-names-and-ids run-id))]
     (queryfn (q/save-results! run-id total-run-time final-score score-percent))
     
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body {:run-time (str total-run-time)
             :score final-score
-            :percent score-percent}}
+            :percent score-percent
+            :problem-names problem-names}}
     ))

@@ -7,7 +7,12 @@
             [clojure.core :as c]  ;; so we can still access core functions
             [next.jdbc :as jdbc]
             [buddy.hashers :as hashers]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.set :as set]))
+
+(defn clean-ns [m]
+  (clojure.core/into {} (map (fn [[k v]] [(keyword (name k)) v]) m)))
+
 
 ;; the core namespace will closure over this with the connection
 (defn execute-query
@@ -73,11 +78,20 @@
 (defn get-fn-name
   "Given an attempt UUID, returns the associated function_name."
   [attempt-id]
-  [(-> (select [:function_name])
+  [(-> (select :function_name)
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
    #(:attempts/function_name (first %))])
+
+(defn get-names-and-ids
+  "returns all attempt ids and names"
+  [run-id]
+  [(-> (select :id :function_name)
+       (from :attempts)
+       (where [:= :run_id [:cast run-id :uuid]]))
+
+   #(mapv clean-ns %)])
 
 (defn attempt-valid?
   "given both a run id and attempt id, check the attempt id matches to the run"
