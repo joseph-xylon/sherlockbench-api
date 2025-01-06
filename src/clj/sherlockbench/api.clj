@@ -5,12 +5,22 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]))
 
+(defn filter-problems-anon
+  "get the appropriate subset of problems as specified"
+  [problems subset]
+  (let [problems' (filter #(:demo (:tags %)) problems)]
+    ;; if they provided a subset we subset it further
+    (if subset
+      (filter #((keyword subset) (:tags %)) problems')
+      problems')))
+
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
+    {subset "subset"} :query-params
     problems :problems}]
-  (let [; get the pertinent subset of the problems and randomize the order
-        problems' (filter #(:demo (:tags %)) problems)
+  (let [; get the pertinent subset of the problems
+        problems' (filter-problems-anon problems subset)
         run-id (queryfn (q/create-run! benchmark-version msg-limit))
         attempts (for [p problems'      ; 1 attempt per problem
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]

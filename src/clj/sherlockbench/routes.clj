@@ -117,7 +117,8 @@
         {:middleware [output-to-json
                       wrap-problems]}
         ["start-run"
-         {:get {:handler api/start-anonymous-run}}]
+         {:get {:handler api/start-anonymous-run
+                :parameters {:path {:subset ::string}}}}]
 
         ["test-function"
          {:post {:handler api/test-function
