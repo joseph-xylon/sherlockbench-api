@@ -45,10 +45,11 @@
      (hashers/check password hashed))])
 
 (defn create-run!
-  [benchmark-version msg-limit]
+  [benchmark-version starttime config]
   [(-> (insert-into :runs)
        (values [{:benchmark_version benchmark-version
-                 :config [:cast (json/write-str {:msg-limit msg-limit}) :jsonb]}])
+                 :config [:cast (json/write-str config) :jsonb]
+                 :datetime_start starttime}])
        (returning :id))
 
    #(:runs/id (first %))])

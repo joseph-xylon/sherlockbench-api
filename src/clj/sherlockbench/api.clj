@@ -21,7 +21,11 @@
     problems :problems}]
   (let [; get the pertinent subset of the problems
         problems' (filter-problems-anon problems subset)
-        run-id (queryfn (q/create-run! benchmark-version msg-limit))
+        now (java.time.LocalDateTime/now)
+        config {:msg-limit msg-limit
+                :run-type "anonymous"
+                :subset subset}
+        run-id (queryfn (q/create-run! benchmark-version now config))
         attempts (for [p problems'      ; 1 attempt per problem
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
                    {:attempt-id attempt
@@ -36,6 +40,7 @@
 (defn start-competition-run
   "in this one we will use an pre-existing run-id. and we will shuffle the problems"
   []
+  ;; set the datetime_start
   true
   )
 
