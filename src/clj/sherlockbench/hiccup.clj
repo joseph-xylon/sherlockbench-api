@@ -7,7 +7,14 @@
   (->> [:html {:lang "en"}
         [:head
          [:title title]
-         [:link {:rel "stylesheet" :href "/public/style/style.css"}]]
+         [:link {:rel "stylesheet" :href "/public/style/style.css"}]
+         [:meta {:name "viewport"
+                 :content "width=device-width, initial-scale=1.0"}]
+         [:meta {:charset "UTF-8"}]
+         [:script {:src "https://unpkg.com/htmx.org@2.0.4"
+          :integrity "sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+          :crossorigin "anonymous"}]
+         [:script {:src "https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"}]]
         [:body
          [:header [:h1 title]]
          (into [:main]
@@ -24,14 +31,12 @@
 (defn render-login
   "prompt for login deets"
   [redirect-to f-token & [errormsg]]
-  (let [post-to (str "/login?redirect=" redirect-to)
-        errorprint (if errormsg
-                     [:p [:em errormsg]]
-                     "")
-        login-form [:form {:method "POST" :action post-to}
-                    [:input {:name "__anti-forgery-token"
-                             :type "hidden"
-                             :value f-token}]
+  (let [post-to (str "/web/login?redirect=" redirect-to)
+        errorprint [:p#errormsg]
+        login-form [:form {:hx-post post-to
+                           :hx-ext "json-enc"
+                           :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
+                           :hx-target "#errormsg"}
                     [:fieldset
                      [:legend "Please login"]
                      [:label {:for "username"} "Username"]

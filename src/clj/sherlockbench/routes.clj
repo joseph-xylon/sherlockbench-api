@@ -16,6 +16,7 @@
             [sherlockbench.api :as api]
             [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap]]
             [ring.logger :as logger]
+            [clojure.tools.logging :as log]
             [clojure.data.json :as json]))
 
 (s/def ::id int?)
@@ -42,7 +43,7 @@
                           (str uri "?" query-string)
                           "UTF-8")]
         {:status 303
-         :headers {"Location" (str "/login?redirect=" redirect-url)}
+         :headers {"Location" (str "/web/login?redirect=" redirect-url)}
          :body ""}))))
 
 (defn output-to-json [handler]
@@ -53,13 +54,18 @@
   (fn [request]
     (let [validation (get-in request [:reitit.core/match :data :post :validation])
           body (:body request)]
-      (if (or (nil? validation)
+      ;; (prn "expected: " validation)
+      ;; (prn "got: " body)
+      (if (or (= (:request-method request) :get) ; we only validate post
+              (nil? validation)                  ; no validation
               (s/valid? (s/keys :req-un (keys validation)) body))
         (handler request)
-        {:status 400
-         :headers {"Content-Type" "application/json"}
-         :body {:error "Request body does not conform to the expected schema."
-                :problems (s/explain-data (s/keys :req-un (keys validation)) body)}}))))
+        (do
+          ;; (prn "validation failed")
+          {:status 400
+           :headers {"Content-Type" "application/json"}
+           :body {:error "Request body does not conform to the expected schema."
+                  :problems (s/explain-data (s/keys :req-un (keys validation)) body)}})))))
 
 (defn load-problems
   "Safely load the problems from a namespace"
@@ -104,13 +110,17 @@
                       wrap-anti-forgery]}
         ["login" {:get {:handler hl/login-handler}
                   :post {:handler hl/login-post-handler
-                         :parameters {:form {:username ::string
-                                             :password ::string}}}}]
+                         :validation {:username ::string
+                                      :password ::string}}}]
         ["logout" {:get {:handler hl/logout-handler}}]
 
         ["public/*path" {:get {:middleware [wrap-content-type
                                             [wrap-resource ""]]
-                               :handler hl/not-found-handler}}]]
+                               :handler hl/not-found-handler}}]
+
+        ["secure/"
+         {:middleware [wrap-auth]}
+         ["runs" {:get {:handler hl/display-runs-page}}]]]
 
        ;; API
        ["/api/"
@@ -162,5 +172,6 @@
                            muuntaja/format-response-middleware
                            rrc/coerce-response-middleware
                            logger/wrap-with-logger
-                           wrap-query-builder]}})
+                           wrap-query-builder
+                           ]}})
      hl/not-found-handler)))

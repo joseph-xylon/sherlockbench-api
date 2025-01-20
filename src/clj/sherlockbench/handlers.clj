@@ -32,19 +32,20 @@
   [{queryfn :queryfn
     {redirect "redirect" :or {redirect "/"}} :query-params
     session :session
-    {{:keys [username password]} :form} :parameters
-   f-token :anti-forgery-token}]
+    {:keys [username password]} :body
+    f-token :anti-forgery-token}]
+
   (if (queryfn (q/authenticate-user username password))
     ;; login success
-    {:status 303
-     :headers {"Location" redirect}
+    {:status 200
+     :headers {"HX-Redirect" redirect}
      :body ""
      :session (assoc session :user username)}
 
     ;; login failure
     {:status 200
      :headers {"Content-Type" "text/html"}
-     :body (ph/render-login redirect f-token "Login failed")}))
+     :body "<em>Login failed</em>"}))
 
 (defn logout-handler
   "log out and redirect to /"
@@ -54,3 +55,10 @@
    :headers {"Location" "/"}
    :body ""
    :session (dissoc session :user)})
+
+(defn display-runs-page
+  "home"
+  [{queryfn :queryfn}]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body (ph/render-message "The runs will be listed here.")})
