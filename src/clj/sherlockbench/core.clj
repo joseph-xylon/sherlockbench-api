@@ -5,7 +5,8 @@
             [integrant.core :as ig]
             [migratus.core :as migratus]
             [sherlockbench.queries :as queries]
-            [sherlockbench.routes :as routes])
+            [sherlockbench.routes :as routes]
+            [ring.redis.session :refer [redis-store read-redis-session write-redis-session]])
   (:gen-class))
 
 (defn read-edn-file [file-path]
@@ -40,13 +41,17 @@
   (.close conn))
 
 ;; handler
-(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config]}]
-  (routes/app queryfn config))
+(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config session-store]}]
+  (routes/app queryfn config session-store))
 
 ;; query builder
 (defmethod ig/init-key :sherlockbench/queryfn [_ {:keys [database]}]
   (fn [& args]
     (apply queries/execute-query database args)))
+ 
+;; session store
+(defmethod ig/init-key :sherlockbench/session-store [_ {:keys [redis-config]}]
+  (redis-store redis-config))
 
 ;; jetty
 (defmethod ig/init-key :ring.adaptor/jetty [_ {:keys [handler opts]}]

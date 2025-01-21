@@ -1,5 +1,6 @@
 (ns sherlockbench.handlers
-  (:require [sherlockbench.queries :as q]
+  (:require [clojure.set :as set]
+            [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [hiccup2.core :as h]))
 
@@ -15,7 +16,8 @@
   [{queryfn :queryfn}]
   {:status 200
    :headers {"Content-Type" "text/html"}
-   :body (ph/render-message "The SherlockBench API is hosted here.")})
+   :body (ph/render-base "Home" [[:p "SherlockBench Server is hosted here."]
+                                 [:p "For the admin console, see " [:a {:href "/web/secure/runs"} "here"] "."]])})
 
 (defn login-handler
   "show the login prompt. the parameter variable holds the url the user was trying
@@ -56,9 +58,14 @@
    :body ""
    :session (dissoc session :user)})
 
+(defn strip-namespace [m]
+  (let [rename-key (fn [k] (keyword (name k)))]
+    (set/rename-keys m (zipmap (keys m) (map rename-key (keys m))))))
+
 (defn display-runs-page
   "home"
   [{queryfn :queryfn}]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body (ph/render-message "The runs will be listed here.")})
+  (let [runs (queryfn (q/list-runs))]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body (ph/render-runs (map strip-namespace runs))}))

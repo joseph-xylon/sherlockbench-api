@@ -5,9 +5,14 @@
  :db.sql/connection {:db-credentials #ig/ref :credentials/db}
 
  :sherlockbench/queryfn {:database #ig/ref :db.sql/connection}
+
+ :sherlockbench/session-store {:redis-config {:pool {}
+                                              :spec {:host "127.0.0.1"
+                                                     :port 6379}}}
  
  :sherlockbench/handler {:queryfn #ig/ref :sherlockbench/queryfn
-                         :config #ig/ref :sherlockbench/config}
+                         :config #ig/ref :sherlockbench/config
+                         :session-store #ig/ref :sherlockbench/session-store}
 
  :migratus/config (:database #ig/ref :db.sql/connection)
 

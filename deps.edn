@@ -16,7 +16,9 @@
         buddy/buddy-hashers {:mvn/version "2.0.167"}
         org.clojure/data.json {:mvn/version "2.5.1"}
         clj-http/clj-http {:mvn/version "3.13.0"}
-        ring/ring-json {:mvn/version "0.5.1"}}
+        ring/ring-json {:mvn/version "0.5.1"}
+        io.github.Xylon2/ring-redis-session {:git/tag "v4.0.2"
+                                             :git/sha "6b2221d"}}
 
  :aliases {;; Run with clj -T:build function-in-build
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.6" :git/sha "52cf7d6"}}

@@ -201,3 +201,10 @@
        (where [:= :id [:cast run-id :uuid]]))
 
    identity])
+
+(defn list-runs
+  []
+  [(-> (select :*)
+       (from :runs))
+
+   identity])

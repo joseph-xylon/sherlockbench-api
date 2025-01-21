@@ -7,7 +7,7 @@
   (->> [:html {:lang "en"}
         [:head
          [:title title]
-         [:link {:rel "stylesheet" :href "/public/style/style.css"}]
+         [:link {:rel "stylesheet" :href "/web/public/style/style.css"}]
          [:meta {:name "viewport"
                  :content "width=device-width, initial-scale=1.0"}]
          [:meta {:charset "UTF-8"}]
@@ -48,3 +48,26 @@
                     
                     [:input {:type "submit" :value "Login"}]]]
     (render-base "Login" [errorprint login-form])))
+
+(defn render-runs
+  "render a table with a list of the runs"
+  [runs]
+  (let [table [:table
+               [:thead
+                [:tr
+                 [:td ""]
+                 [:td "id"]
+                 [:td "config"]
+                 [:td "start time"]
+                 [:td "score"]]]
+               
+               [:tbody
+                (for [{:keys [id config datetime_start score_percent]} runs]
+                  [:tr
+                   [:td [:input {:type "checkbox" :name "run_id" :value id}]]
+                   [:td id]
+                   [:td config]
+                   [:td datetime_start]
+                   [:td score_percent]
+                   ])]]]
+    (render-base "Runs" [table])))

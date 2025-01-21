@@ -90,7 +90,7 @@
 
 (defn app
   "reitit with format negotiation and input & output coercion"
-  [queryfn config]
+  [queryfn config session-store]
   ;; we define a middleware that includes our query builder
   (let [wrap-query-builder (fn [handler]
                              (fn [request]
@@ -98,9 +98,7 @@
         problems (aggregate-problems (:extra-namespaces config))
         wrap-problems (fn [handler]
                         (fn [request]
-                          (handler (assoc request :problems problems))))
-        session-store (memory/memory-store)]
-    
+                          (handler (assoc request :problems problems))))]
 
     (ring/ring-handler
      (ring/router
