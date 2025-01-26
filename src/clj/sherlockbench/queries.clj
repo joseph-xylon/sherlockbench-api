@@ -202,9 +202,16 @@
 
    identity])
 
+(defn parse-psql-json
+  [m]
+  (when m
+    (json/read-str (.getValue m))))
+
 (defn list-runs
   []
   [(-> (select :*)
        (from :runs))
 
-   identity])
+   (fn [xs] (->> xs
+                 (map (fn [m] (clojure.core/update m :runs/config parse-psql-json)))
+                 (map (fn [m] (clojure.core/update m :runs/final_score parse-psql-json)))))])

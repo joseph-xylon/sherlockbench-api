@@ -10,3 +10,35 @@ body{
 h1,h2,h3{
     line-height:1.2
 }
+
+/* General table styling */
+table {
+    width: 100%;
+    border-collapse: collapse; /* Ensure borders collapse into a single line */
+    margin: 20px 0;
+    font-size: 16px;
+    text-align: left;
+}
+
+/* Add borders to the table and cells */
+th, td {
+    border: 1px solid #ddd; /* Light gray border */
+    padding: 8px; /* Add padding for spacing */
+}
+
+/* Style table headers */
+th {
+    background-color: #f4f4f4; /* Light gray background */
+    font-weight: bold;
+    text-transform: uppercase; /* Make header text uppercase */
+}
+
+/* /\* Add hover effect for rows *\/ */
+/* tr:hover { */
+/*     background-color: #f1f1f1; /\* Light background on hover *\/ */
+/* } */
+
+/* Add alternating row colors */
+tbody tr:nth-child(odd) {
+    background-color: #fafafa; /* Subtle striped effect */
+}

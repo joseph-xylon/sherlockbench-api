@@ -49,10 +49,22 @@
                     [:input {:type "submit" :value "Login"}]]]
     (render-base "Login" [errorprint login-form])))
 
+(defn map-to-html [m]
+  (reduce (fn [acc [key val]] (concat acc [(str key ": " val) [:br]])) [] m))
+
+(defn map-to-ratio [{numerator "numerator" denominator "denominator"}]
+  (str numerator "/" denominator))
+
 (defn render-runs
   "render a table with a list of the runs"
   [runs]
-  (let [table [:table
+  (let [table [:table {:style "table-layout: auto; width: 100%;"}
+               [:colgroup
+                [:col]
+                [:col]
+                [:col {:style "white-space: nowrap; min-width: 12em;"}]
+                [:col]
+                [:col]]
                [:thead
                 [:tr
                  [:td ""]
@@ -62,12 +74,12 @@
                  [:td "score"]]]
                
                [:tbody
-                (for [{:keys [id config datetime_start score_percent]} runs]
+                (for [{:keys [id config datetime_start final_score]} runs]
                   [:tr
                    [:td [:input {:type "checkbox" :name "run_id" :value id}]]
                    [:td id]
-                   [:td config]
+                   [:td (map-to-html config)]
                    [:td datetime_start]
-                   [:td score_percent]
+                   [:td (map-to-ratio final_score)]
                    ])]]]
     (render-base "Runs" [table])))
