@@ -17,7 +17,7 @@
   {:status 200
    :headers {"Content-Type" "text/html"}
    :body (ph/render-base "Home" [[:p "SherlockBench Server is hosted here."]
-                                 [:p "For the admin console, see " [:a {:href "/web/secure/runs"} "here"] "."]])})
+                                 [:p "For the admin console, see " [:a {:href "/web/secure/runs/display"} "here"] "."]])})
 
 (defn login-handler
   "show the login prompt. the parameter variable holds the url the user was trying
@@ -64,8 +64,24 @@
 
 (defn display-runs-page
   "home"
-  [{queryfn :queryfn}]
+  [{queryfn :queryfn
+    f-token :anti-forgery-token}]
   (let [runs (queryfn (q/list-runs))]
     {:status 200
      :headers {"Content-Type" "text/html"}
-     :body (ph/render-runs (map strip-namespace runs))}))
+     :body (ph/runs-page (map strip-namespace runs) f-token)}))
+
+(defn delete-run-handler
+  "delete a run given an id"
+  [{queryfn :queryfn
+    {:keys [run_id]} :body}]
+  (let [exists (queryfn (q/delete-run! run_id))
+        runs (queryfn (q/list-runs))
+        table (ph/render-runs (map strip-namespace runs))
+        rendered (if exists
+                   (str (h/html table))
+                   (str (h/html table)
+                        (h/html [:p.error "This run id does not exist"]))  )]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body rendered}))

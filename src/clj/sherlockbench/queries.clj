@@ -215,3 +215,11 @@
    (fn [xs] (->> xs
                  (map (fn [m] (clojure.core/update m :runs/config parse-psql-json)))
                  (map (fn [m] (clojure.core/update m :runs/final_score parse-psql-json)))))])
+
+(defn delete-run!
+  "returns true or false"
+  [run-id]
+  [(-> (delete-from :runs)
+       (where [:= :id [:cast run-id :uuid]]))
+
+   #(not= 0 (:next.jdbc/update-count (first %)))])

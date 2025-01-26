@@ -42,3 +42,8 @@ th {
 tbody tr:nth-child(odd) {
     background-color: #fafafa; /* Subtle striped effect */
 }
+
+.error {
+    font-weight: bold;
+    color: #aa1111;
+}

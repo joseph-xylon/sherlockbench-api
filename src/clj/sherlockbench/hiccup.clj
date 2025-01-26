@@ -3,7 +3,7 @@
 
 (defn render-base
   "the basic structure of an html document. takes a title and list of elements"
-  [title contents]
+  [title contents & {:keys [form scripts]}]
   (->> [:html {:lang "en"}
         [:head
          [:title title]
@@ -17,8 +17,10 @@
          [:script {:src "https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"}]]
         [:body
          [:header [:h1 title]]
-         (into [:main]
-               contents)]]
+         [:main
+          (into [:div#replaceme]
+                contents)
+          form]]]
        h/html
        (str "<!DOCTYPE html>")))
 
@@ -82,4 +84,16 @@
                    [:td datetime_start]
                    [:td (map-to-ratio final_score)]
                    ])]]]
-    (render-base "Runs" [table])))
+    table))
+
+(defn runs-page
+  "render the runs page"
+  [runs f-token]
+  (let [table (render-runs runs)
+        form [:form {:hx-ext "json-enc"
+                     :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
+                     :hx-target "#replaceme"}
+              [:button {:type "button"
+                        :hx-post "/web/secure/runs/delete-run"
+                        :hx-include "[name='run_id']"} "Delete"]]]
+    (render-base "Runs" [table] :form form)))

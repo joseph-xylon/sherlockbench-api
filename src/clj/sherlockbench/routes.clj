@@ -118,7 +118,10 @@
 
         ["secure/"
          {:middleware [wrap-auth]}
-         ["runs" {:get {:handler hl/display-runs-page}}]]]
+         ["runs/"
+          ["display" {:get {:handler hl/display-runs-page}}]
+          ["delete-run" {:post {:handler hl/delete-run-handler
+                                :validation {:run_id ::string}}}]]]]
 
        ;; API
        ["/api/"
