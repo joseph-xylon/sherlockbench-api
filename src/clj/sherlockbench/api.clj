@@ -17,14 +17,14 @@
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
-    {subset "subset"} :query-params
-    problems :problems}]
+    problems :problems
+    {:keys [client-id subset]} :body}]
   (let [; get the pertinent subset of the problems
         problems' (filter-problems-anon problems subset)
         now (java.time.LocalDateTime/now)
         config {:msg-limit msg-limit
                 :subset subset}
-        run-id (queryfn (q/create-run! benchmark-version "anonymous" config "started" now))
+        run-id (queryfn (q/create-run! benchmark-version client-id "anonymous" config "started" now))
         attempts (for [p problems'      ; 1 attempt per problem
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
                    {:attempt-id attempt

@@ -45,10 +45,11 @@
      (hashers/check password hashed))])
 
 (defn create-run!
-  [benchmark-version run-type config run-state starttime]
+  [benchmark-version client-id run-type config run-state starttime]
   [(-> (insert-into :runs)
        (values [{:benchmark_version benchmark-version
                  :config [:cast (json/write-str config) :jsonb]
+                 :client_id client-id
                  :run_type [:cast run-type :run_type_type]
                  :run-state [:cast run-state :run_state_type]
                  :datetime_start starttime}])
