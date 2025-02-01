@@ -45,10 +45,12 @@
      (hashers/check password hashed))])
 
 (defn create-run!
-  [benchmark-version starttime config]
+  [benchmark-version run-type config run-state starttime]
   [(-> (insert-into :runs)
        (values [{:benchmark_version benchmark-version
                  :config [:cast (json/write-str config) :jsonb]
+                 :run_type [:cast run-type :run_type_type]
+                 :run-state [:cast run-state :run_state_type]
                  :datetime_start starttime}])
        (returning :id))
 
@@ -197,7 +199,8 @@
   [(-> (update :runs)
        (set {:total_run_time total-run-time
              :final_score [:cast (json/write-str final-score) :jsonb]
-             :score_percent score-percent})
+             :score_percent score-percent
+             :run_state [:cast "complete" :run_state_type]})
        (where [:= :id [:cast run-id :uuid]]))
 
    identity])

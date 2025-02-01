@@ -23,9 +23,8 @@
         problems' (filter-problems-anon problems subset)
         now (java.time.LocalDateTime/now)
         config {:msg-limit msg-limit
-                :run-type "anonymous"
                 :subset subset}
-        run-id (queryfn (q/create-run! benchmark-version now config))
+        run-id (queryfn (q/create-run! benchmark-version "anonymous" config "started" now))
         attempts (for [p problems'      ; 1 attempt per problem
                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
                    {:attempt-id attempt
