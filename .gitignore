@@ -4,6 +4,8 @@
 /reqlog/
 /log
 /node_modules/
+.shadow-cljs
+/resources/web/public/cljs/
 /src/clj/extra/
 /test/clj/extra/
 db-credentials.edn

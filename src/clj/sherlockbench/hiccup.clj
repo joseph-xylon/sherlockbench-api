@@ -12,15 +12,18 @@
                  :content "width=device-width, initial-scale=1.0"}]
          [:meta {:charset "UTF-8"}]
          [:script {:src "https://unpkg.com/htmx.org@2.0.4"
-          :integrity "sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-          :crossorigin "anonymous"}]
+                   :integrity "sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+                   :crossorigin "anonymous"}]
          [:script {:src "https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"}]]
         [:body
          [:header [:h1 title]]
          [:main
           (into [:div#replaceme]
                 contents)
-          form]]]
+          form]
+         (when-not (empty? scripts)
+           (for [script scripts]
+             [:script {:type "text/javascript" :src script}]))]]
        h/html
        (str "<!DOCTYPE html>")))
 
@@ -90,10 +93,17 @@
   "render the runs page"
   [runs f-token]
   (let [table (render-runs runs)
-        form [:form {:hx-ext "json-enc"
+        form [:form#pageform {:hx-ext "json-enc"
                      :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
                      :hx-target "#replaceme"}
               [:button {:type "button"
                         :hx-post "/web/secure/runs/delete-run"
-                        :hx-include "[name='run_id']"} "Delete"]]]
-    (render-base "Runs" [table] :form form)))
+                        :hx-include "[name='run_id']"} "Delete"]
+              " "
+              [:select {:name "exam-set"
+                        :hx-post "/web/secure/runs/create-run"
+                        :autocomplete "off"}
+               [:option {:value "default"} "Create"]
+               [:option {:value "competition"} "Competition"]
+               [:option {:value "holdout"} "Holdout"]]]]
+    (render-base "Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))

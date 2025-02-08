@@ -2,6 +2,8 @@
   (:require [clojure.set :as set]
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
+            [sherlockbench.api :as api]
+            [sherlockbench.config :refer [benchmark-version msg-limit]]
             [hiccup2.core :as h]))
 
 (defn not-found-handler
@@ -75,13 +77,33 @@
   "delete a run given an id"
   [{queryfn :queryfn
     {:keys [run_id]} :body}]
-  (let [exists (queryfn (q/delete-run! run_id))
-        runs (queryfn (q/list-runs))
+  
+  (doseq [id run_id]
+    (queryfn (q/delete-run! id)))
+
+  (let [runs (queryfn (q/list-runs))
         table (ph/render-runs (map strip-namespace runs))
-        rendered (if exists
-                   (str (h/html table))
-                   (str (h/html table)
-                        (h/html [:p.error "This run id does not exist"]))  )]
+        rendered (str (h/html table))]
+    
     {:status 200
      :headers {"Content-Type" "text/html"}
+     :body rendered}))
+
+(defn create-run-handler
+  "create a run"
+  [{queryfn :queryfn
+    problems :problems
+    {:keys [exam-set]} :body}]
+  (let [subset (keyword exam-set)
+        [run-id attempts] (api/create-run queryfn problems nil "official" "started" subset)
+
+        ;; now render the page
+        runs (queryfn (q/list-runs))
+        table (ph/render-runs (map strip-namespace runs))
+        rendered (str (h/html table)
+                      (h/html [:p.message (str "Created run with id: " run-id)]))
+        ]
+    {:status 200
+     :headers {"Content-Type" "text/html"
+               "HX-Trigger" "clearform"}
      :body rendered}))

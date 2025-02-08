@@ -1,0 +1,10 @@
+{:source-paths ["src/cljs"
+                "test/cljs"]
+ :dependencies []
+ :dev-http {3010 "resources/web/public/"}
+ :builds {:app {:output-dir "resources/web/public/cljs/"
+                :asset-path "cljs"
+                :target :browser
+                :modules {:shared {:entries []}
+                          :runs-list {:entries [sherlockbench.runs-list]
+                                      :depends-on #{:shared}}}}}}

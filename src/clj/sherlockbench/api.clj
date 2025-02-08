@@ -5,30 +5,40 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]))
 
-(defn filter-problems-anon
+(defn filter-problems
   "get the appropriate subset of problems as specified"
-  [problems subset]
-  (let [problems' (filter #(:demo (:tags %)) problems)]
+  [type problems subset]
+  (let [primary-tag (case type
+                      "anonymous" :demo
+                      "official" :competition)
+        problems' (filter #(primary-tag (:tags %)) problems)]
     ;; if they provided a subset we subset it further
     (if subset
       (filter #((keyword subset) (:tags %)) problems')
       problems')))
+
+(defn create-run
+  "create a run and attempts"
+  [queryfn problems client-id run-type run-state subset]
+  (let [; get the pertinent subset of the problems
+        problems' (filter-problems run-type problems subset)
+        now (java.time.LocalDateTime/now)
+        config {:msg-limit msg-limit
+                :subset subset}
+        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state now))
+        attempts (doall
+                  (for [p problems'     ; 1 attempt per problem
+                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
+                    {:attempt-id attempt
+                     :fn-args (:args p)}))]
+    [run-id attempts]))
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
     problems :problems
     {:keys [client-id subset]} :body}]
-  (let [; get the pertinent subset of the problems
-        problems' (filter-problems-anon problems subset)
-        now (java.time.LocalDateTime/now)
-        config {:msg-limit msg-limit
-                :subset subset}
-        run-id (queryfn (q/create-run! benchmark-version client-id "anonymous" config "started" now))
-        attempts (for [p problems'      ; 1 attempt per problem
-                       :let [attempt (queryfn (q/create-attempt! run-id p))]]
-                   {:attempt-id attempt
-                    :fn-args (:args p)})]
+  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)]
 
     {:status 200
      :headers {"Content-Type" "application/json"}

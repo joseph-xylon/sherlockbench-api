@@ -12,6 +12,7 @@
             [ring.middleware.session.memory :as memory]
             [ring.middleware.json :refer [wrap-json-body]]
             [clojure.spec.alpha :as s]
+            [clojure.string :as str]
             [sherlockbench.handlers :as hl]
             [sherlockbench.api :as api]
             [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap]]
@@ -23,6 +24,8 @@
 (s/def ::string string?)
 (s/def ::anything any?)
 (s/def ::anything-collection (s/coll-of any?))
+(s/def ::exam-sets #{"competition" "holdout"})
+(s/def ::vector-of-strings (s/coll-of string? :kind vector?))
 
 (defn valid-uuid? [uuid]
   (try
@@ -50,22 +53,50 @@
   (fn [request]
     (update (handler request) :body json/write-str)))
 
+(defn coerce-to-vec
+  "Forms with checkboxes return either string or vec dependant on whether one or
+  two are checked. Need to standardize as always string."
+  [m field-specs]
+  (reduce-kv (fn [acc key spec]
+               (let [v (get m key)]
+                 (assoc acc key
+                        (if (and
+                             (str/includes? spec "vector-of-")
+                             (not (vector? v)))
+                          [v]
+                          v))))
+             {}
+             field-specs))
+
+(defn validate-fields
+  "Validate the keys in map `m` using the corresponding specs in `field-specs`.
+  Returns an empty map if all validations pass; otherwise returns a map
+  where each key maps to its explain-data error."
+  [m field-specs]
+  (reduce-kv (fn [errors key spec]
+               (let [v (get m key)]
+                 (if (s/valid? spec v)
+                   errors
+                   (assoc errors key (s/explain-data spec v)))))
+             {}
+             field-specs))
+
 (defn wrap-validate-body [handler]
   (fn [request]
     (let [validation (get-in request [:reitit.core/match :data :post :validation])
-          body (:body request)]
-      ;; (prn "expected: " validation)
-      ;; (prn "got: " body)
+          body (:body request)
+          body-coerced (coerce-to-vec body validation)
+          request' (assoc request :body body-coerced)]
       (if (or (= (:request-method request) :get) ; we only validate post
               (nil? validation)                  ; no validation
-              (s/valid? (s/keys :req-un (keys validation)) body))
-        (handler request)
+              (empty? (validate-fields body-coerced validation)))
+        (handler request')
         (do
-          ;; (prn "validation failed")
+          (prn "failed validation")
           {:status 400
            :headers {"Content-Type" "application/json"}
            :body {:error "Request body does not conform to the expected schema."
-                  :problems (s/explain-data (s/keys :req-un (keys validation)) body)}})))))
+                  :problems "FIXME"}})))))
 
 (defn load-problems
   "Safely load the problems from a namespace"
@@ -117,11 +148,14 @@
                                :handler hl/not-found-handler}}]
 
         ["secure/"
-         {:middleware [wrap-auth]}
+         {:middleware [wrap-auth
+                       wrap-problems]}
          ["runs/"
           ["display" {:get {:handler hl/display-runs-page}}]
           ["delete-run" {:post {:handler hl/delete-run-handler
-                                :validation {:run_id ::string}}}]]]]
+                                :validation {:run_id ::vector-of-strings}}}]
+          ["create-run" {:post {:handler hl/create-run-handler
+                                :validation {:exam-set ::exam-sets}}}]]]]
 
        ;; API
        ["/api/"
