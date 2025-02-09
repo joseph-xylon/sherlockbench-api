@@ -29,9 +29,10 @@
   [queryfn problems client-id run-type run-state subset]
   (let [; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset)
+        now (java.time.LocalDateTime/now)
         config {:msg-limit msg-limit
                 :subset subset}
-        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state nil))
+        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
         attempts (doall
                   (for [p problems'     ; 1 attempt per problem
                         :let [attempt (queryfn (q/create-attempt! run-id p))]]

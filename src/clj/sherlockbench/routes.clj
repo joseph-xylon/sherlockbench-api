@@ -199,7 +199,8 @@
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion
               :muuntaja   m/instance
-              :middleware [parameters/parameters-middleware
+              :middleware [;; log-path-middleware
+                           parameters/parameters-middleware
                            [wrap-json-body {:keywords? true}]
                            wrap-validate-body
                            muuntaja/format-response-middleware
