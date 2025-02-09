@@ -57,6 +57,21 @@
 
    #(:runs/id (first %))])
 
+(defn start-run!
+  [run-id client-id]
+  [(-> (update :runs)
+       (set {:client_id client-id
+             :datetime_start [:now]
+             :run_state [:cast "started" :run_state_type]})
+       (where [:= :id [:cast run-id :uuid]]))
+   (-> (select :id :function_name)
+       (from :attempts)
+       (where [:= :run_id [:cast run-id :uuid]])
+       (order-by [[:random]]))
+
+   (fn [_ v]
+     (map (fn [m] (reduce-kv #(assoc %1 (keyword (name %2)) %3) {} m)) v))])
+
 (defn create-attempt!
   [run-id problem]
   [(-> (insert-into :attempts)

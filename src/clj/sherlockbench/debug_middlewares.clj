@@ -22,3 +22,10 @@
     (println comment)
     (handler request)))
 
+(defn log-path-middleware
+  "Middleware that logs the request path."
+  [handler]
+  (fn [request]
+    (let [path (:uri request)]
+      (println "Path hit:" path))
+    (handler request)))

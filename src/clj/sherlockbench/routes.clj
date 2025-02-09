@@ -15,7 +15,7 @@
             [clojure.string :as str]
             [sherlockbench.handlers :as hl]
             [sherlockbench.api :as api]
-            [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap]]
+            [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap log-path-middleware]]
             [ring.logger :as logger]
             [clojure.tools.logging :as log]
             [clojure.data.json :as json]))
@@ -27,13 +27,7 @@
 (s/def ::exam-sets #{"competition" "holdout"})
 (s/def ::vector-of-strings (s/coll-of string? :kind vector?))
 
-(defn valid-uuid? [uuid]
-  (try
-    (java.util.UUID/fromString uuid)
-    true
-    (catch IllegalArgumentException _ false)))
-
-(s/def ::uuid (s/and string? valid-uuid?))
+(s/def ::uuid (s/and string? api/valid-uuid?))
 
 (defn wrap-auth [handler]
   (fn [{:keys [uri query-string session] :as request}]
@@ -51,7 +45,9 @@
 
 (defn output-to-json [handler]
   (fn [request]
-    (update (handler request) :body json/write-str)))
+    (let [output (handler request)]
+      ;; (prn "output: " output)
+      (update output :body json/write-str))))
 
 (defn coerce-to-vec
   "Forms with checkboxes return either string or vec dependant on whether one or
@@ -162,9 +158,10 @@
         {:middleware [output-to-json
                       wrap-problems]}
         ["start-run"
-         {:post {:handler api/start-anonymous-run
+         {:post {:handler api/start-run
                  :validation {:client-id ::string
-                              :subset ::string}}}]
+                              :subset ::anything
+                              :existing-run-id ::anything}}}]
 
         ["test-function"
          {:post {:handler api/test-function

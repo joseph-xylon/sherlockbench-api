@@ -95,7 +95,7 @@
     problems :problems
     {:keys [exam-set]} :body}]
   (let [subset (keyword exam-set)
-        [run-id attempts] (api/create-run queryfn problems nil "official" "started" subset)
+        [run-id attempts] (api/create-run queryfn problems nil "official" "pending" subset)
 
         ;; now render the page
         runs (queryfn (q/list-runs))

@@ -5,6 +5,13 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]))
 
+(defn valid-uuid? [uuid]
+  (try
+    (java.util.UUID/fromString uuid)
+    true
+    (catch IllegalArgumentException _ false)
+    (catch NullPointerException _ false)))
+
 (defn filter-problems
   "get the appropriate subset of problems as specified"
   [type problems subset]
@@ -22,10 +29,9 @@
   [queryfn problems client-id run-type run-state subset]
   (let [; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset)
-        now (java.time.LocalDateTime/now)
         config {:msg-limit msg-limit
                 :subset subset}
-        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state now))
+        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state nil))
         attempts (doall
                   (for [p problems'     ; 1 attempt per problem
                         :let [attempt (queryfn (q/create-attempt! run-id p))]]
@@ -47,11 +53,33 @@
             :attempts attempts}}))
 
 (defn start-competition-run
-  "in this one we will use an pre-existing run-id. and we will shuffle the problems"
-  []
-  ;; set the datetime_start
-  true
-  )
+  "In this one we will use an pre-existing run-id.
+   Update datetime_start, run_state and client_id.
+   Retrieve the attempts in random order."
+  [{queryfn :queryfn
+    problems :problems
+    {:keys [existing-run-id client-id]} :body}]
+  (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
+        ;; map over attempts, replacing :function_name with fn args
+        attempts' (for [{:keys [id function_name]} attempts]
+                    {:attempt-id id
+                     :fn-args (->> problems
+                                   (filter #(= (:name- %) function_name))
+                                   first
+                                   :args)})]
+
+    {:status 200
+     :headers {"Content-Type" "application/json"}
+     :body {:run-id existing-run-id
+            :benchmark-version benchmark-version
+            :attempts attempts'}}))
+
+(defn start-run
+  "check if there is a run-id specified and decide which fn to call"
+  [{{:keys [existing-run-id]} :body :as request}]
+  (if (valid-uuid? existing-run-id)
+    (start-competition-run request)
+    (start-anonymous-run request)))
 
 (defn wrap-check-run
   "did they give us a valid run id?"
