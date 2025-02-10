@@ -60,20 +60,25 @@
   [{queryfn :queryfn
     problems :problems
     {:keys [existing-run-id client-id]} :body}]
-  (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
-        ;; map over attempts, replacing :function_name with fn args
-        attempts' (for [{:keys [id function_name]} attempts]
-                    {:attempt-id id
-                     :fn-args (->> problems
-                                   (filter #(= (:name- %) function_name))
-                                   first
-                                   :args)})]
-
-    {:status 200
+  (if (queryfn (q/started? existing-run-id))
+    {:status 412
      :headers {"Content-Type" "application/json"}
-     :body {:run-id existing-run-id
-            :benchmark-version benchmark-version
-            :attempts attempts'}}))
+     :body {:error "this run has already been started"}}
+
+    (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
+          ;; map over attempts, replacing :function_name with fn args
+          attempts' (for [{:keys [id function_name]} attempts]
+                      {:attempt-id id
+                       :fn-args (->> problems
+                                     (filter #(= (:name- %) function_name))
+                                     first
+                                     :args)})]
+
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body {:run-id existing-run-id
+              :benchmark-version benchmark-version
+              :attempts attempts'}})))
 
 (defn start-run
   "check if there is a run-id specified and decide which fn to call"

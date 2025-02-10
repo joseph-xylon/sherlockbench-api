@@ -6,6 +6,7 @@
             [honey.sql.helpers :refer :all]  ;; shadows core functions
             [clojure.core :as c]  ;; so we can still access core functions
             [next.jdbc :as jdbc]
+            [next.jdbc.result-set :as result-set]
             [buddy.hashers :as hashers]
             [clojure.data.json :as json]
             [clojure.set :as set]))
@@ -23,7 +24,7 @@
     (when debug (doseq [formatted-query formatted-queries]
                     (println (str "formatted-query: " formatted-query))))
 
-    (apply processor (map #(jdbc/execute! conn %) formatted-queries))))
+    (apply processor (map #(jdbc/execute! conn % {:builder-fn result-set/as-unqualified-maps}) formatted-queries))))
 
 (defn create-user
   "hashes the password"
@@ -55,7 +56,7 @@
                  :datetime_start starttime}])
        (returning :id))
 
-   #(:runs/id (first %))])
+   #(:id (first %))])
 
 (defn start-run!
   [run-id client-id]
@@ -72,6 +73,16 @@
    (fn [_ v]
      (map (fn [m] (reduce-kv #(assoc %1 (keyword (name %2)) %3) {} m)) v))])
 
+(defn started?
+  [run-id]
+  [(-> (select :run_state)
+       (from :runs)
+       (where [:= :id [:cast run-id :uuid]]))
+
+   #(if (= (:run_state (first %)) "pending")
+      false
+      true)])
+
 (defn create-attempt!
   [run-id problem]
   [(-> (insert-into :attempts)
@@ -80,7 +91,7 @@
                  :verifications [:cast (json/write-str (:verifications problem)) :jsonb]}])
        (returning :id))
 
-   #(:attempts/id (first %))])
+   #(:id (first %))])
 
 (defn check-run
   "return true or false indicating if they have a valid run_id"
@@ -101,7 +112,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(:attempts/function_name (first %))])
+   #(:function_name (first %))])
 
 (defn get-names-and-ids
   "returns all attempt ids and names"
@@ -131,7 +142,7 @@
        (where [:= :id [:cast attempt-id :uuid]])
        (returning :fn_calls))
 
-   #(:attempts/fn_calls (first %))])
+   #(:fn_calls (first %))])
 
 (defn started-verifications?
   "Given an attempt UUID, returns if it started verifications yet."
@@ -140,7 +151,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(:attempts/started_verifications (first %))])
+   #(:started_verifications (first %))])
 
 (defn get-verifications
   "Given an attempt UUID, returns the associated validations"
@@ -149,7 +160,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(json/read-str (.getValue (:attempts/verifications (first %))))])
+   #(json/read-str (.getValue (:verifications (first %))))])
 
 (defn started-verifications!
   "Given an attempt UUID, set the started_verifications field."
@@ -232,8 +243,8 @@
        (from :runs))
 
    (fn [xs] (->> xs
-                 (map (fn [m] (clojure.core/update m :runs/config parse-psql-json)))
-                 (map (fn [m] (clojure.core/update m :runs/final_score parse-psql-json)))))])
+                 (map (fn [m] (clojure.core/update m :config parse-psql-json)))
+                 (map (fn [m] (clojure.core/update m :final_score parse-psql-json)))))])
 
 (defn delete-run!
   "returns true or false"
