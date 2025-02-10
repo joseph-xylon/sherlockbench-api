@@ -69,21 +69,27 @@
                 [:col]
                 [:col {:style "white-space: nowrap; min-width: 12em;"}]
                 [:col]
+                [:col]
+                [:col]
                 [:col]]
                [:thead
                 [:tr
                  [:td ""]
                  [:td "id"]
                  [:td "config"]
+                 [:td "type"]
+                 [:td "state"]
                  [:td "start time"]
                  [:td "score"]]]
                
                [:tbody
-                (for [{:keys [id config datetime_start final_score]} runs]
+                (for [{:keys [id config datetime_start final_score run_type run_state]} runs]
                   [:tr
                    [:td [:input {:type "checkbox" :name "run_id" :value id}]]
                    [:td id]
                    [:td (map-to-html config)]
+                   [:td run_type]
+                   [:td run_state]
                    [:td datetime_start]
                    [:td (map-to-ratio final_score)]
                    ])]]]
@@ -94,15 +100,15 @@
   [runs f-token]
   (let [table (render-runs runs)
         form [:form#pageform {:hx-ext "json-enc"
-                     :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
-                     :hx-target "#replaceme"}
+                              :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
+                              :hx-target "#replaceme"
+                              :autocomplete "off"}
               [:button {:type "button"
                         :hx-post "/web/secure/runs/delete-run"
                         :hx-include "[name='run_id']"} "Delete"]
               " "
               [:select {:name "exam-set"
-                        :hx-post "/web/secure/runs/create-run"
-                        :autocomplete "off"}
+                        :hx-post "/web/secure/runs/create-run"}
                [:option {:value "default"} "Create"]
                [:option {:value "competition"} "Competition"]
                [:option {:value "holdout"} "Holdout"]]]]

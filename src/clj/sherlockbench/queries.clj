@@ -240,7 +240,8 @@
 (defn list-runs
   []
   [(-> (select :*)
-       (from :runs))
+       (from :runs)
+       (order-by :created_at))
 
    (fn [xs] (->> xs
                  (map (fn [m] (clojure.core/update m :config parse-psql-json)))
