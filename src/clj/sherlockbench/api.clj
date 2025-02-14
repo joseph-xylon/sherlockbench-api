@@ -50,6 +50,7 @@
     {:status 200
      :headers {"Content-Type" "application/json"}
      :body {:run-id run-id
+            :run-type "anonymous"
             :benchmark-version benchmark-version
             :attempts attempts}}))
 
@@ -77,6 +78,7 @@
       {:status 200
        :headers {"Content-Type" "application/json"}
        :body {:run-id existing-run-id
+              :run-type "competition"
               :benchmark-version benchmark-version
               :attempts attempts'}})))
 
