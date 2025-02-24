@@ -101,7 +101,7 @@
        (where [:and
                [:= :id [:cast run-id :uuid]]
                [:> [:+ :datetime_start [:interval "1 day"]] [:now]]
-               [:= :final_score nil]]))
+               [:!= :run_state [:cast "complete" :run_state_type]]]))
 
    #(not (empty? %))])
 
