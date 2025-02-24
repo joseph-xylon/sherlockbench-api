@@ -157,6 +157,10 @@
        ["/api/"
         {:middleware [output-to-json
                       wrap-problems]}
+        ["is-pending-run"
+         {:post {:handler api/pending-run?
+                 :validation {:run-id ::uuid}}}]
+
         ["start-run"
          {:post {:handler api/start-run
                  :validation {:client-id ::string

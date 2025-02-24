@@ -93,8 +93,8 @@
 
    #(:id (first %))])
 
-(defn check-run
-  "return true or false indicating if they have a valid run_id"
+(defn active-run?
+  "return true or false indicating if they have an id for a non-completed run"
   [run-id]
   [(-> (select [:*])
        (from :runs)
@@ -102,6 +102,17 @@
                [:= :id [:cast run-id :uuid]]
                [:> [:+ :datetime_start [:interval "1 day"]] [:now]]
                [:!= :run_state [:cast "complete" :run_state_type]]]))
+
+   #(not (empty? %))])
+
+(defn pending-run?
+  "return true or false indicating if they have an id for a pending run"
+  [run-id]
+  [(-> (select [:*])
+       (from :runs)
+       (where [:and
+               [:= :id [:cast run-id :uuid]]
+               [:= :run_state [:cast "pending" :run_state_type]]]))
 
    #(not (empty? %))])
 

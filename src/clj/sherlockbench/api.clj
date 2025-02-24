@@ -40,6 +40,12 @@
                      :fn-args (:args p)}))]
     [run-id attempts]))
 
+(defn pending-run? [{queryfn :queryfn
+                     {:keys [run-id]} :body}]
+  {:status 200
+   :headers {"Content-Type" "application/json"}
+   :body {:response (queryfn (q/pending-run? run-id))}})
+
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
@@ -94,7 +100,7 @@
   [handler]
   (fn [{queryfn :queryfn
         {:keys [run-id]} :body :as request}]
-    (if (queryfn (q/check-run run-id))
+    (if (queryfn (q/active-run? run-id))
       ;; continue as if nothing happened
       (handler request)
 
