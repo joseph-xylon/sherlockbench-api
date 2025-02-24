@@ -43,7 +43,8 @@
 (defn pending-run? [{queryfn :queryfn
                      {:keys [run-id]} :body}]
   {:status 200
-   :headers {"Content-Type" "application/json"}
+   :headers {"Content-Type" "application/json"
+             "Access-Control-Allow-Origin" "*"}
    :body {:response (queryfn (q/pending-run? run-id))}})
 
 (defn start-anonymous-run
@@ -54,7 +55,8 @@
   (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)]
 
     {:status 200
-     :headers {"Content-Type" "application/json"}
+     :headers {"Content-Type" "application/json"
+               "Access-Control-Allow-Origin" "*"}
      :body {:run-id run-id
             :run-type "anonymous"
             :benchmark-version benchmark-version
@@ -69,7 +71,8 @@
     {:keys [existing-run-id client-id]} :body}]
   (if (queryfn (q/started? existing-run-id))
     {:status 412
-     :headers {"Content-Type" "application/json"}
+     :headers {"Content-Type" "application/json"
+               "Access-Control-Allow-Origin" "*"}
      :body {:error "this run has already been started"}}
 
     (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
@@ -82,7 +85,8 @@
                                      :args)})]
 
       {:status 200
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:run-id existing-run-id
               :run-type "competition"
               :benchmark-version benchmark-version
@@ -106,7 +110,8 @@
 
       ;; break as they have an expired session
       {:status 412
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:error "your run appears to be invalid or expired"}})))
 
 (defn wrap-check-attempt
@@ -121,7 +126,8 @@
 
       ;; break as they have an expired session
       {:status 412
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:error "your attempt-id doesn't match your run-id"}})))
 
 (defn get-problem-by-name
@@ -148,7 +154,8 @@
           (log/info errors)
 
           {:status 400
-           :headers {"Content-Type" "application/json"}
+           :headers {"Content-Type" "application/json"
+                     "Access-Control-Allow-Origin" "*"}
            :body {:error "your arguments don't comply with the schema"}})))))
 
 (defn apply-fn
@@ -170,11 +177,13 @@
     (cond
       (> call-count msg-limit)
       {:status 400
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:error (format "you have reached the test limit of %d for this problem" msg-limit)}}
       (true? started-verifications)
       {:status 400
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:error "you cannot test the function after you start the validations"}}
       
       :else
@@ -182,7 +191,8 @@
             output (apply-fn problem validated-args)]
 
         {:status 200
-         :headers {"Content-Type" "application/json"}
+         :headers {"Content-Type" "application/json"
+                   "Access-Control-Allow-Origin" "*"}
          :body {:output output}}))))
 
 (defn wrap-record-started [handler]
@@ -212,11 +222,13 @@
         output-type (:output-type (get-problem-by-name problems fn-name))]
     (if (nil? next-verification)
       {:status 200
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:status "done"
               :next-verification nil}}
       {:status 200
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:status "success"
               :next-verification next-verification
               :output-type output-type}})))
@@ -238,14 +250,16 @@
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
       {:status 400
-       :headers {"Content-Type" "application/json"}
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
        :body {:error "you're done"}}
       (let [output (apply-fn problem this-verification)]
         (if (=normalized prediction output)
           (if remaining-verifications
             ;; success with more
             {:status 200
-             :headers {"Content-Type" "application/json"}
+             :headers {"Content-Type" "application/json"
+                       "Access-Control-Allow-Origin" "*"}
              :body {:status "correct"
                     :next-verification (first remaining-verifications)
                     :output-type output-type}}
@@ -254,7 +268,8 @@
             (do
               (queryfn (q/attempt-success! attempt-id))
               {:status 200
-               :headers {"Content-Type" "application/json"}
+               :headers {"Content-Type" "application/json"
+                         "Access-Control-Allow-Origin" "*"}
                :body {:status "done"
                       :next-verification nil}})
             )
@@ -262,7 +277,8 @@
           (do
             (queryfn (q/attempt-failure! attempt-id))
             {:status 200
-             :headers {"Content-Type" "application/json"}
+             :headers {"Content-Type" "application/json"
+                       "Access-Control-Allow-Origin" "*"}
              :body {:status "wrong"
                     :next-verification nil}}))))))
 
@@ -278,7 +294,8 @@
     (queryfn (q/save-results! run-id total-run-time final-score score-percent))
     
     {:status 200
-     :headers {"Content-Type" "application/json"}
+     :headers {"Content-Type" "application/json"
+               "Access-Control-Allow-Origin" "*"}
      :body {:run-time (str total-run-time)
             :score final-score
             :percent score-percent

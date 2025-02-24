@@ -18,7 +18,8 @@
             [sherlockbench.debug-middlewares :refer [wrap-debug-reqmap whenwrap log-path-middleware]]
             [ring.logger :as logger]
             [clojure.tools.logging :as log]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.pprint :refer [pprint]]))
 
 (s/def ::id int?)
 (s/def ::string string?)
@@ -83,14 +84,15 @@
           body (:body request)
           body-coerced (coerce-to-vec body validation)
           request' (assoc request :body body-coerced)]
-      (if (or (= (:request-method request) :get) ; we only validate post
+      (if (or (not= (:request-method request) :post) ; we only validate post
               (nil? validation)                  ; no validation
               (empty? (validate-fields body-coerced validation)))
         (handler request')
         (do
           (prn "failed validation")
           {:status 400
-           :headers {"Content-Type" "application/json"}
+           :headers {"Content-Type" "application/json"
+                     "Access-Control-Allow-Origin" "*"}
            :body {:error "Request body does not conform to the expected schema."
                   :problems "FIXME"}})))))
 
@@ -211,5 +213,12 @@
                            rrc/coerce-response-middleware
                            logger/wrap-with-logger
                            wrap-query-builder
-                           ]}})
+                           ]}
+
+       :reitit.ring/default-options-endpoint
+       {:no-doc true
+        :handler (fn [request]
+                  {:status 200, :body "", :headers {"Allow" "POST,OPTIONS"
+                                                    "Access-Control-Allow-Origin" "*"
+                                                    "Access-Control-Allow-Headers" "*"}})}})
      hl/not-found-handler)))
