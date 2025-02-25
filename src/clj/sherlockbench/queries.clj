@@ -42,7 +42,7 @@
        (from :users)
        (where [:= :login login]))
 
-   (fn [[{hashed :users/password}]]
+   (fn [[{hashed :password}]]
      (hashers/check password hashed))])
 
 (defn create-run!
