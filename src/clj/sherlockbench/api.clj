@@ -37,7 +37,7 @@
                   (for [p problems'     ; 1 attempt per problem
                         :let [attempt (queryfn (q/create-attempt! run-id p))]]
                     {:attempt-id attempt
-                     :fn-args (:args p)}))]
+                     :arg-spec (:args p)}))]
     [run-id attempts]))
 
 (defn pending-run? [{queryfn :queryfn
@@ -79,7 +79,7 @@
           ;; map over attempts, replacing :function_name with fn args
           attempts' (for [{:keys [id function_name]} attempts]
                       {:attempt-id id
-                       :fn-args (->> problems
+                       :arg-spec (->> problems
                                      (filter #(= (:name- %) function_name))
                                      first
                                      :args)})]
