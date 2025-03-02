@@ -9,7 +9,7 @@
     :function (fn [a b c]
                 (- (+ a b) c))
     :verifications [[1, 2, 3], [10, 5, 2], [7, 2, 7]]
-    :output-type "map"
+    :output-type "integer"
     :tags #{:demo :easy3}}
 
    {:name- "is prime"
