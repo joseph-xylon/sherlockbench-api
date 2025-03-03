@@ -1,5 +1,5 @@
 (ns sherlockbench.api
-  (:require [sherlockbench.config :refer [benchmark-version msg-limit]]
+  (:require [sherlockbench.config :refer [benchmark-version test-limit]]
             [sherlockbench.queries :as q]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]
@@ -30,7 +30,7 @@
   (let [; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset)
         now (java.time.LocalDateTime/now)
-        config {:msg-limit msg-limit
+        config {:test-limit test-limit
                 :subset subset}
         run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
         attempts (doall
@@ -175,11 +175,11 @@
   (let [call-count (queryfn (q/increment-fn-calls attempt-id))
         started-verifications (queryfn (q/started-verifications? attempt-id))]
     (cond
-      (> call-count msg-limit)
+      (> call-count test-limit)
       {:status 400
        :headers {"Content-Type" "application/json"
                  "Access-Control-Allow-Origin" "*"}
-       :body {:error (format "you have reached the test limit of %d for this problem" msg-limit)}}
+       :body {:error (format "you have reached the test limit of %d for this problem" test-limit)}}
       (true? started-verifications)
       {:status 400
        :headers {"Content-Type" "application/json"
