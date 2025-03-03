@@ -23,7 +23,7 @@
                   (let [sqrt-n (Math/sqrt n)]
                     (not-any? #(zero? (mod n %))
                               (range 3 (inc (int sqrt-n)) 2)))))
-    :verifications [[2] [7] [4] [1] [13] [25]]
+    :verifications [[23] [4] [13] [25]]
     :output-type "boolean"
     :tags #{:demo :easy3}}
 
@@ -34,7 +34,7 @@
                   0 "banana"
                   1 "apple"
                   2 "orange"))
-    :verifications [[17], [12], [10]]
+    :verifications [[12], [-1], [6]]
     :output-type "string"
     :tags #{:demo :easy3}}
 
@@ -77,7 +77,7 @@
     :args ["integer"]
     :function (fn [n]
                 (* 5 (Math/round (/ (* 3 n) 5.0))))
-    :verifications [[4], [7], [8]]
+    :verifications [[4], [24], [39]]
     :output-type "integer"
     :tags #{:demo}}
 
@@ -98,7 +98,7 @@
                       ; Handle remaining characters if strings are of unequal lengths
                       longer (if (> (count a) (count b)) (drop (count b) a) (drop (count a) b))]
                   (str (apply str interleaved) (apply str longer))))
-    :verifications [["abc", "123"], ["hello", "world"], ["clojure", "123"], ["short", "longer"], ["a", "BCD"], ["", "empty"], ["nonempty", ""]]
+    :verifications [["abc", "123"], ["clojure", "123"], ["short", "longer"]]
     :output-type "string"
     :tags #{:demo}}
 
