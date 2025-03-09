@@ -14,7 +14,7 @@
 
 (defn uber [_]
   (clean nil)
-  (b/copy-dir {:src-dirs ["src" "resources" "env/prod/resources"]
+  (b/copy-dir {:src-dirs ["src/clj" "resources" "env/prod/resources"]
                :target-dir class-dir})
   (b/compile-clj {:basis basis
                   :ns-compile '[sherlockbench.core]
