@@ -15,10 +15,10 @@
 (defn filter-problems
   "get the appropriate subset of problems as specified"
   [type problems subset]
-  (let [primary-tag (case type
-                      "anonymous" :demo
-                      "official" :competition)
-        problems' (filter #(primary-tag (:tags %)) problems)]
+  (let [problems' (case type 
+                      "anonymous" (filter #(:demo (:tags %)) problems)
+                      "official" problems)]
+
     ;; if they provided a subset we subset it further
     (if subset
       (filter #((keyword subset) (:tags %)) problems')

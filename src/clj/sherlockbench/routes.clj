@@ -25,7 +25,8 @@
 (s/def ::string string?)
 (s/def ::anything any?)
 (s/def ::anything-collection (s/coll-of any?))
-(s/def ::exam-sets #{"competition" "holdout"})
+;; This will be dynamically checked against the run-types from config in the handler
+(s/def ::exam-sets string?)
 (s/def ::vector-of-strings (s/coll-of string? :kind vector?))
 
 (s/def ::uuid (s/and string? api/valid-uuid?))
@@ -125,9 +126,12 @@
                              (fn [request]
                                (handler (assoc request :queryfn queryfn))))
         problems (aggregate-problems (:extra-namespaces config))
+        run-types (:run-types config)
         wrap-problems (fn [handler]
                         (fn [request]
-                          (handler (assoc request :problems problems))))]
+                          (handler (assoc request 
+                                         :problems problems
+                                         :run-types run-types))))]
 
     (ring/ring-handler
      (ring/router
