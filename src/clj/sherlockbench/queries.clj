@@ -56,7 +56,7 @@
                  :datetime_start starttime}])
        (returning :id))
 
-   #(:id (first %))])
+   (comp :id first)])
 
 (defn start-run!
   [run-id client-id]
@@ -91,7 +91,7 @@
                  :verifications [:cast (json/write-str (:verifications problem)) :jsonb]}])
        (returning :id))
 
-   #(:id (first %))])
+   (comp :id first)])
 
 (defn active-run?
   "return true or false indicating if they have an id for a non-completed run"
@@ -103,7 +103,7 @@
                [:> [:+ :datetime_start [:interval "1 day"]] [:now]]
                [:!= :run_state [:cast "complete" :run_state_type]]]))
 
-   #(not (empty? %))])
+   (comp not empty?)])
 
 (defn pending-run?
   "return true or false indicating if they have an id for a pending run"
@@ -114,7 +114,7 @@
                [:= :id [:cast run-id :uuid]]
                [:= :run_state [:cast "pending" :run_state_type]]]))
 
-   #(not (empty? %))])
+   (comp not empty?)])
 
 (defn get-fn-name
   "Given an attempt UUID, returns the associated function_name."
@@ -123,7 +123,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(:function_name (first %))])
+   (comp :function_name first)])
 
 (defn get-names-and-ids
   "returns all attempt ids and names"
@@ -143,7 +143,7 @@
                [:= :run-id [:cast run-id :uuid]]
                [:= :id [:cast attempt-id :uuid]]]))
 
-   #(not (empty? %))])
+   (comp not empty?)])
 
 (defn increment-fn-calls
   "Increments the fn_calls column for a given attempt ID."
@@ -153,7 +153,7 @@
        (where [:= :id [:cast attempt-id :uuid]])
        (returning :fn_calls))
 
-   #(:fn_calls (first %))])
+   (comp :fn_calls first)])
 
 (defn started-verifications?
   "Given an attempt UUID, returns if it started verifications yet."
@@ -162,7 +162,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(:started_verifications (first %))])
+   (comp :started_verifications first)])
 
 (defn get-verifications
   "Given an attempt UUID, returns the associated validations"
@@ -171,7 +171,7 @@
        (from :attempts)
        (where [:= :id [:cast attempt-id :uuid]]))
 
-   #(json/read-str (.getValue (:verifications (first %))))])
+   (comp #(json/read-str (.getValue %)) :verifications first)])
 
 (defn started-verifications!
   "Given an attempt UUID, set the started_verifications field."
@@ -216,7 +216,7 @@
        (from :runs)
        (where [:= :id [:cast run-id :uuid]]))
 
-   #(:total_run_time (first %))])
+   (comp :total_run_time first)])
 
 (defn get-final-score
   [run-id]
