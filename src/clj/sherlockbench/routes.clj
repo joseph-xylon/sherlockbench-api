@@ -97,35 +97,14 @@
            :body {:error "Request body does not conform to the expected schema."
                   :problems "FIXME"}})))))
 
-(defn load-problems
-  "Safely load the problems from a namespace"
-  [ns]
-  (try
-    (require ns)
-    (let [problems-symbol (ns-resolve ns 'problems)]
-      (if problems-symbol
-        (do (prn ns)
-          @problems-symbol)
-        (do
-          (println "Namespace" ns "does not define 'problems'")
-          [])))
-    (catch Exception e
-      (println "Failed to load problems from" ns ":" (.getMessage e))
-      [])))
-
-(defn aggregate-problems
-  "Combine all problems from the namespaces"
-  [namespaces]
-  (apply concat (map load-problems (conj namespaces 'sherlockbench.problems))))
 
 (defn app
   "reitit with format negotiation and input & output coercion"
-  [queryfn config session-store]
+  [queryfn config session-store problems]
   ;; we define a middleware that includes our query builder
   (let [wrap-query-builder (fn [handler]
                              (fn [request]
                                (handler (assoc request :queryfn queryfn))))
-        problems (aggregate-problems (:extra-namespaces config))
         run-types (:run-types config)
         wrap-problems (fn [handler]
                         (fn [request]

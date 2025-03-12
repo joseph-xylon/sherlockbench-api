@@ -10,9 +10,12 @@
                                               :spec {:host "127.0.0.1"
                                                      :port 6379}}}
  
+ :sherlockbench/problems {:config #ig/ref :sherlockbench/config}
+ 
  :sherlockbench/handler {:queryfn #ig/ref :sherlockbench/queryfn
                          :config #ig/ref :sherlockbench/config
-                         :session-store #ig/ref :sherlockbench/session-store}
+                         :session-store #ig/ref :sherlockbench/session-store
+                         :problems #ig/ref :sherlockbench/problems}
 
  :migratus/config (:database #ig/ref :db.sql/connection)
 

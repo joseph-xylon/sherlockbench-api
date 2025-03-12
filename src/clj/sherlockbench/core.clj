@@ -6,6 +6,7 @@
             [migratus.core :as migratus]
             [sherlockbench.queries :as queries]
             [sherlockbench.routes :as routes]
+            [sherlockbench.problem-loader :as problem-loader]
             [ring.redis.session :refer [redis-store read-redis-session write-redis-session]])
   (:gen-class))
 
@@ -26,6 +27,11 @@
 (defmethod ig/init-key :sherlockbench/config [_ {:keys [file-path]}]
   (read-edn-file file-path))
 
+;; problems loader
+(defmethod ig/init-key :sherlockbench/problems [_ {:keys [config]}]
+  (let [extra-namespaces (:extra-namespaces config)]
+    (problem-loader/aggregate-problems extra-namespaces)))
+
 ;; db connection
 (defn connect-db
   "reads the credentials and returns a connection object"
@@ -41,8 +47,8 @@
   (.close conn))
 
 ;; handler
-(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config session-store]}]
-  (routes/app queryfn config session-store))
+(defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config session-store problems]}]
+  (routes/app queryfn config session-store problems))
 
 ;; query builder
 (defmethod ig/init-key :sherlockbench/queryfn [_ {:keys [database]}]
