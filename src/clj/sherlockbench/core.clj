@@ -6,6 +6,7 @@
             [migratus.core :as migratus]
             [sherlockbench.queries :as queries]
             [sherlockbench.routes :as routes]
+            [sherlockbench.add-user :refer [add-user]]
             [sherlockbench.problem-loader :as problem-loader]
             [ring.redis.session :refer [redis-store read-redis-session write-redis-session]])
   (:gen-class))
@@ -109,6 +110,8 @@
                 (migratus/migrate (:migratus/config system)))
     "rollback" (let [system (start-system :db)]
                  (migratus/rollback (:migratus/config system)))
+    "add-user" (let [system (start-system :db)]
+                 (add-user (:sherlockbench/queryfn system)))
     (print-usage)))
 
 (comment
