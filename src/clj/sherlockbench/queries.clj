@@ -9,7 +9,8 @@
             [next.jdbc.result-set :as result-set]
             [buddy.hashers :as hashers]
             [clojure.data.json :as json]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [sherlockbench.config :refer [default-test-limit]]))
 
 (defn clean-ns [m]
   (clojure.core/into {} (map (fn [[k v]] [(keyword (name k)) v]) m)))
@@ -88,7 +89,8 @@
   [(-> (insert-into :attempts)
        (values [{:run_id run-id
                  :function_name (:name- problem)
-                 :verifications [:cast (json/write-str (:verifications problem)) :jsonb]}])
+                 :verifications [:cast (json/write-str (:verifications problem)) :jsonb]
+                 :test_limit (or (:test-limit problem) default-test-limit)}])
        (returning :id))
 
    (comp :id first)])
@@ -154,6 +156,15 @@
        (returning :fn_calls))
 
    (comp :fn_calls first)])
+
+(defn get-test-limit
+  "Gets the test_limit for a given attempt ID."
+  [attempt-id]
+  [(-> (select :test_limit)
+       (from :attempts)
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   (comp :test_limit first)])
 
 (defn started-verifications?
   "Given an attempt UUID, returns if it started verifications yet."

@@ -1,0 +1,1 @@
+ALTER TABLE attempts ADD COLUMN test_limit INTEGER DEFAULT 20;
