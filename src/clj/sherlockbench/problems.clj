@@ -10,6 +10,7 @@
                 (- (+ a b) c))
     :verifications [[1, 2, 3], [10, 5, 2], [7, 2, 7]]
     :output-type "integer"
+    :test-limit 20
     :tags #{:demo :easy3}}
 
    {:name- "is prime"
@@ -25,6 +26,7 @@
                               (range 3 (inc (int sqrt-n)) 2)))))
     :verifications [[23] [4] [13] [25]]
     :output-type "boolean"
+    :test-limit 15
     :tags #{:demo :easy3}}
 
    {:name- "modulus 3 to fruit"
@@ -36,6 +38,7 @@
                   2 "orange"))
     :verifications [[12], [-1], [6]]
     :output-type "string"
+    :test-limit 10
     :tags #{:demo :easy3}}
 
    {:name- "ignore one"
@@ -44,6 +47,7 @@
                 (* a c))
     :verifications [[3, 2, 9], [4, 5, 2], [0, 9, 3]]
     :output-type "integer"
+    :test-limit 12
     :tags #{:demo}}
 
    {:name- "count vowels"
@@ -52,6 +56,7 @@
                 (count (filter #(#{\a \e \i \o \u \A \E \I \O \U} %) s)))
     :verifications [["vector"], ["ocean"], ["strength"]]
     :output-type "integer"
+    :test-limit 8
     :tags #{:demo}}
 
    {:name- "add with toggle sign"
@@ -63,6 +68,7 @@
                     sum)))
     :verifications [[4, 5, false],[7, 3, false], [10, -2, true]]
     :output-type "integer"
+    :test-limit 15
     :tags #{:demo}}
 
    {:name- "concat nth char"
@@ -71,6 +77,7 @@
                 (str a (nth b c)))
     :verifications [["hello", "world", 2], ["abc", "defg", 3], ["clojure", "program", 4]]
     :output-type "string"
+    :test-limit 10
     :tags #{:demo}}
 
    {:name- "times three and round"
@@ -79,6 +86,7 @@
                 (* 5 (Math/round (/ (* 3 n) 5.0))))
     :verifications [[4], [24], [39]]
     :output-type "integer"
+    :test-limit 20
     :tags #{:demo}}
 
    {:name- "filter consonants and vowels"
@@ -91,6 +99,7 @@
                   (str (apply str vowels) (apply str consonants) (apply str digits))))
     :verifications [["paradise"], ["sunshine"], ["elephant"]]
     :output-type "string"
+    :test-limit 25
     :tags #{:demo}}
 
    {:name- "interleave characters"
@@ -102,6 +111,7 @@
                   (str (apply str interleaved) (apply str longer))))
     :verifications [["abc", "123"], ["clojure", "123"], ["short", "longer"]]
     :output-type "string"
+    :test-limit 15
     :tags #{:demo}}
 
    ])

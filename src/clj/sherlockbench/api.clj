@@ -1,5 +1,5 @@
 (ns sherlockbench.api
-  (:require [sherlockbench.config :refer [benchmark-version test-limit]]
+  (:require [sherlockbench.config :refer [benchmark-version default-test-limit]]
             [sherlockbench.queries :as q]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]
@@ -30,14 +30,15 @@
   (let [; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset)
         now (java.time.LocalDateTime/now)
-        config {:test-limit test-limit
-                :subset subset}
+        config {:subset subset}
         run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
         attempts (doall
                   (for [p problems'     ; 1 attempt per problem
-                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
-                    {:attempt-id attempt
-                     :arg-spec (:args p)}))]
+                        :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
+                    {:attempt-id id
+                     :arg-spec (:args p)
+                     :test-limit test_limit
+                     :attempts-remaining test_limit}))]
     [run-id attempts]))
 
 (defn pending-run? [{queryfn :queryfn
@@ -77,12 +78,14 @@
 
     (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
           ;; map over attempts, replacing :function_name with fn args
-          attempts' (for [{:keys [id function_name]} attempts]
+          attempts' (for [{:keys [id function_name test_limit]} attempts]
                       {:attempt-id id
                        :arg-spec (->> problems
                                      (filter #(= (:name- %) function_name))
                                      first
-                                     :args)})]
+                                     :args)
+                       :test-limit test_limit
+                       :attempts-remaining test_limit})]
 
       {:status 200
        :headers {"Content-Type" "application/json"
@@ -172,14 +175,15 @@
     fn-name :fn-name
     {:keys [attempt-id]} :body}]
 
-  (let [call-count (queryfn (q/increment-fn-calls attempt-id))
-        started-verifications (queryfn (q/started-verifications? attempt-id))]
+  (let [{:keys [fn_calls test_limit]} (queryfn (q/increment-fn-calls attempt-id))
+        started-verifications (queryfn (q/started-verifications? attempt-id))
+        remaining-attempts (- test_limit fn_calls)]
     (cond
-      (> call-count test-limit)
+      (> fn_calls test_limit)
       {:status 400
        :headers {"Content-Type" "application/json"
                  "Access-Control-Allow-Origin" "*"}
-       :body {:error (format "you have reached the test limit of %d for this problem" test-limit)}}
+       :body {:error (format "you have reached the test limit of %d for this problem" test_limit)}}
       (true? started-verifications)
       {:status 400
        :headers {"Content-Type" "application/json"
@@ -193,7 +197,9 @@
         {:status 200
          :headers {"Content-Type" "application/json"
                    "Access-Control-Allow-Origin" "*"}
-         :body {:output output}}))))
+         :body {:output output
+                :attempts_remaining remaining-attempts
+                :test_limit test_limit}}))))
 
 (defn wrap-record-started [handler]
   (fn [{queryfn :queryfn
