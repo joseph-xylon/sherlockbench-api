@@ -34,9 +34,11 @@
         run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
         attempts (doall
                   (for [p problems'     ; 1 attempt per problem
-                        :let [attempt (queryfn (q/create-attempt! run-id p))]]
-                    {:attempt-id attempt
-                     :arg-spec (:args p)}))]
+                        :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
+                    {:attempt-id id
+                     :arg-spec (:args p)
+                     :test-limit test_limit
+                     :attempts-remaining test_limit}))]
     [run-id attempts]))
 
 (defn pending-run? [{queryfn :queryfn
@@ -51,14 +53,7 @@
   [{queryfn :queryfn
     problems :problems
     {:keys [client-id subset]} :body}]
-  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)
-        attempts-with-limits (map (fn [attempt]
-                                    (let [attempt-id (:attempt-id attempt)
-                                          test-limit (queryfn (q/get-test-limit attempt-id))]
-                                      (assoc attempt 
-                                             :test-limit test-limit
-                                             :attempts-remaining test-limit)))
-                                  attempts)]
+  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)]
 
     {:status 200
      :headers {"Content-Type" "application/json"
@@ -66,7 +61,7 @@
      :body {:run-id run-id
             :run-type "anonymous"
             :benchmark-version benchmark-version
-            :attempts attempts-with-limits}}))
+            :attempts attempts}}))
 
 (defn start-competition-run
   "In this one we will use an pre-existing run-id.
@@ -83,15 +78,14 @@
 
     (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
           ;; map over attempts, replacing :function_name with fn args
-          attempts' (for [{:keys [id function_name]} attempts
-                          :let [test-limit (queryfn (q/get-test-limit id))]]
+          attempts' (for [{:keys [id function_name test_limit]} attempts]
                       {:attempt-id id
                        :arg-spec (->> problems
                                      (filter #(= (:name- %) function_name))
                                      first
                                      :args)
-                       :test-limit test-limit
-                       :attempts-remaining test-limit})]
+                       :test-limit test_limit
+                       :attempts-remaining test_limit})]
 
       {:status 200
        :headers {"Content-Type" "application/json"
@@ -181,16 +175,15 @@
     fn-name :fn-name
     {:keys [attempt-id]} :body}]
 
-  (let [call-count (queryfn (q/increment-fn-calls attempt-id))
-        test-limit (queryfn (q/get-test-limit attempt-id))
+  (let [{:keys [fn_calls test_limit]} (queryfn (q/increment-fn-calls attempt-id))
         started-verifications (queryfn (q/started-verifications? attempt-id))
-        remaining-attempts (- test-limit call-count)]
+        remaining-attempts (- test_limit fn_calls)]
     (cond
-      (> call-count test-limit)
+      (> fn_calls test_limit)
       {:status 400
        :headers {"Content-Type" "application/json"
                  "Access-Control-Allow-Origin" "*"}
-       :body {:error (format "you have reached the test limit of %d for this problem" test-limit)}}
+       :body {:error (format "you have reached the test limit of %d for this problem" test_limit)}}
       (true? started-verifications)
       {:status 400
        :headers {"Content-Type" "application/json"
@@ -206,7 +199,7 @@
                    "Access-Control-Allow-Origin" "*"}
          :body {:output output
                 :attempts_remaining remaining-attempts
-                :test_limit test-limit}}))))
+                :test_limit test_limit}}))))
 
 (defn wrap-record-started [handler]
   (fn [{queryfn :queryfn

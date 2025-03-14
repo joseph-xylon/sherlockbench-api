@@ -66,7 +66,7 @@
              :datetime_start [:now]
              :run_state [:cast "started" :run_state_type]})
        (where [:= :id [:cast run-id :uuid]]))
-   (-> (select :id :function_name)
+   (-> (select :id :function_name :test_limit)
        (from :attempts)
        (where [:= :run_id [:cast run-id :uuid]])
        (order-by [[:random]]))
@@ -91,9 +91,9 @@
                  :function_name (:name- problem)
                  :verifications [:cast (json/write-str (:verifications problem)) :jsonb]
                  :test_limit (or (:test-limit problem) default-test-limit)}])
-       (returning :id))
+       (returning :id :test_limit))
 
-   (comp :id first)])
+   (comp #(select-keys % [:id :test_limit]) first)])
 
 (defn active-run?
   "return true or false indicating if they have an id for a non-completed run"
@@ -148,23 +148,15 @@
    (comp not empty?)])
 
 (defn increment-fn-calls
-  "Increments the fn_calls column for a given attempt ID."
+  "Increments the fn_calls column for a given attempt ID and returns fn_calls and test_limit."
   [attempt-id]
   [(-> (update :attempts)
        (set {:fn_calls [:+ :fn_calls 1]})
        (where [:= :id [:cast attempt-id :uuid]])
-       (returning :fn_calls))
+       (returning :fn_calls :test_limit))
 
-   (comp :fn_calls first)])
+   (comp #(select-keys % [:fn_calls :test_limit]) first)])
 
-(defn get-test-limit
-  "Gets the test_limit for a given attempt ID."
-  [attempt-id]
-  [(-> (select :test_limit)
-       (from :attempts)
-       (where [:= :id [:cast attempt-id :uuid]]))
-
-   (comp :test_limit first)])
 
 (defn started-verifications?
   "Given an attempt UUID, returns if it started verifications yet."
