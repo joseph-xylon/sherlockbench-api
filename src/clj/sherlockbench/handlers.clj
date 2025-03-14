@@ -3,6 +3,7 @@
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [sherlockbench.api :as api]
+            [sherlockbench.config :as config]
             [hiccup2.core :as h]))
 
 (defn not-found-handler
@@ -66,12 +67,12 @@
 (defn display-runs-page
   "home"
   [{queryfn :queryfn
-    run-types :run-types
     f-token :anti-forgery-token}]
-  (let [runs (queryfn (q/list-runs))]
+  (let [runs (queryfn (q/list-runs))
+        problem-sets (config/available-problem-sets)]
     {:status 200
      :headers {"Content-Type" "text/html"}
-     :body (ph/runs-page (map strip-namespace runs) f-token run-types)}))
+     :body (ph/runs-page (map strip-namespace runs) f-token problem-sets)}))
 
 (defn delete-run-handler
   "delete a run given an id"
@@ -93,22 +94,22 @@
   "create a run"
   [{queryfn :queryfn
     problems :problems
-    run-types :run-types
     {:keys [exam-set]} :body}]
-  ;; Validate that the exam-set is one of the allowed run types
-  (if-not (contains? (set (map (comp name :tag) run-types)) exam-set)
-    {:status 400
-     :headers {"Content-Type" "text/html"}
-     :body (str (h/html [:p.error (str "Invalid exam set: " exam-set)]))}
-    (let [subset (keyword exam-set)
-          [run-id attempts] (api/create-run queryfn problems nil "official" "pending" subset)
-          
-          ;; now render the page
-          runs (queryfn (q/list-runs))
-          table (ph/render-runs (map strip-namespace runs))
-          rendered (str (h/html table)
-                        (h/html [:p.message (str "Created run with id: " run-id)]))]
-      {:status 200
-       :headers {"Content-Type" "text/html"
-                 "HX-Trigger" "clearform"}
-       :body rendered})))
+  ;; Validate that the exam-set is one of the available problem sets
+  (let [problem-sets (config/available-problem-sets)]
+    (if-not (contains? (set (map name (keys problem-sets))) exam-set)
+      {:status 400
+       :headers {"Content-Type" "text/html"}
+       :body (str (h/html [:p.error (str "Invalid problem set: " exam-set)]))}
+      (let [problem-set (keyword exam-set)
+            [run-id attempts] (api/create-run queryfn problems nil "official" "pending" problem-set)
+            
+            ;; now render the page
+            runs (queryfn (q/list-runs))
+            table (ph/render-runs (map strip-namespace runs))
+            rendered (str (h/html table)
+                          (h/html [:p.message (str "Created run with id: " run-id)]))]
+        {:status 200
+         :headers {"Content-Type" "text/html"
+                   "HX-Trigger" "clearform"}
+         :body rendered}))))

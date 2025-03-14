@@ -30,8 +30,16 @@
 
 ;; problems loader
 (defmethod ig/init-key :sherlockbench/problems [_ {:keys [config]}]
-  (let [extra-namespaces (:extra-namespaces config)]
-    (problem-loader/aggregate-problems extra-namespaces)))
+  (let [extra-namespaces (:extra-namespaces config)
+        {:keys [problems namespaces tag-names] :as result} (problem-loader/aggregate-problems extra-namespaces)]
+    
+    ;; Store problem metadata in config for later use
+    (swap! sherlockbench.config/config-atom assoc 
+           :namespaces namespaces
+           :tag-names tag-names)
+    
+    ;; Return just the problems vector for backward compatibility
+    problems))
 
 ;; db connection
 (defn connect-db

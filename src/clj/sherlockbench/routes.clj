@@ -105,12 +105,10 @@
   (let [wrap-query-builder (fn [handler]
                              (fn [request]
                                (handler (assoc request :queryfn queryfn))))
-        run-types (:run-types config)
         wrap-problems (fn [handler]
                         (fn [request]
                           (handler (assoc request 
-                                         :problems problems
-                                         :run-types run-types))))]
+                                         :problems problems))))]
 
     (ring/ring-handler
      (ring/router

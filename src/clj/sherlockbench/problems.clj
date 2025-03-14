@@ -1,7 +1,15 @@
 (ns sherlockbench.problems)
 
-; the list of functions which the LLM will interrogate
+;; Namespace metadata
+(def namespace-name "Sherlock Demo Problems")
 
+;; Map of tag names - display names for the UI
+(def tag-names
+  {:problems/easy3 "Easy Demo (3 Problems)"
+   :problems/math "Math Problems"
+   :problems/string "String Manipulation"})
+
+;; The list of functions which the LLM will interrogate
 (def problems
   [
    {:name- "add & subtract"
@@ -11,7 +19,7 @@
     :verifications [[1, 2, 3], [10, 5, 2], [7, 2, 7]]
     :output-type "integer"
     :test-limit 20
-    :tags #{:demo :easy3}}
+    :tags #{:easy3 :math}}
 
    {:name- "is prime"
     :args ["integer"]
@@ -27,7 +35,7 @@
     :verifications [[23] [4] [13] [25]]
     :output-type "boolean"
     :test-limit 20
-    :tags #{:demo :easy3}}
+    :tags #{:easy3 :math}}
 
    {:name- "modulus 3 to fruit"
     :args ["integer"]
@@ -39,7 +47,7 @@
     :verifications [[12], [-1], [6]]
     :output-type "string"
     :test-limit 20
-    :tags #{:demo :easy3}}
+    :tags #{:easy3 :math}}
 
    {:name- "ignore one"
     :args ["integer" "integer" "integer"]
@@ -48,7 +56,7 @@
     :verifications [[3, 2, 9], [4, 5, 2], [0, 9, 3]]
     :output-type "integer"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:math}}
 
    {:name- "count vowels"
     :args ["string"]
@@ -57,7 +65,7 @@
     :verifications [["vector"], ["ocean"], ["strength"]]
     :output-type "integer"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:string}}
 
    {:name- "add with toggle sign"
     :args ["integer" "integer" "boolean"]
@@ -69,7 +77,7 @@
     :verifications [[4, 5, false],[7, 3, false], [10, -2, true]]
     :output-type "integer"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:math}}
 
    {:name- "concat nth char"
     :args ["string" "string" "integer"]
@@ -78,7 +86,7 @@
     :verifications [["hello", "world", 2], ["abc", "defg", 3], ["clojure", "program", 4]]
     :output-type "string"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:string}}
 
    {:name- "times three and round"
     :args ["integer"]
@@ -87,7 +95,7 @@
     :verifications [[4], [24], [39]]
     :output-type "integer"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:math}}
 
    {:name- "filter consonants and vowels"
     :args ["string"]
@@ -100,7 +108,7 @@
     :verifications [["paradise"], ["sunshine"], ["elephant"]]
     :output-type "string"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:string}}
 
    {:name- "interleave characters"
     :args ["string" "string"]
@@ -112,6 +120,6 @@
     :verifications [["abc", "123"], ["clojure", "123"], ["short", "longer"]]
     :output-type "string"
     :test-limit 20
-    :tags #{:demo}}
+    :tags #{:string}}
 
    ])

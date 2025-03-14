@@ -12,17 +12,33 @@
     (catch IllegalArgumentException _ false)
     (catch NullPointerException _ false)))
 
-(defn filter-problems
-  "get the appropriate subset of problems as specified"
-  [type problems subset]
-  (let [problems' (case type 
-                      "anonymous" (filter #(:demo (:tags %)) problems)
-                      "official" problems)]
+(defn filter-by-problem-set
+  "Filter problems by problem set configuration"
+  [problem-set all-problems]
+  (if (nil? problem-set)
+    all-problems
+    (let [problem-set-id (if (keyword? problem-set) problem-set (keyword problem-set))
+          problem-set-config (get-in config/config [:problem-sets problem-set-id])
+          tags (get-in problem-set-config [:problems :tags] #{})
+          names (get-in problem-set-config [:problems :names] #{})]
+      
+      ;; Select problems that match either the tags or the names
+      (filter (fn [problem]
+                (or (some tags (:tags problem))
+                    (contains? names (:name- problem))))
+              all-problems))))
 
-    ;; if they provided a subset we subset it further
-    (if subset
-      (filter #((keyword subset) (:tags %)) problems')
-      problems')))
+(defn filter-problems
+  "Get the appropriate subset of problems as specified by run type and problem set"
+  [type problems problem-set]
+  (let [;; First filter by anonymous vs official
+        problems' (case type 
+                    ;; For anonymous runs, still use the :demo tag for backward compatibility
+                    "anonymous" (filter #(contains? (:tags %) :demo) problems)
+                    "official" problems)]
+    
+    ;; Then apply problem set filtering if specified
+    (filter-by-problem-set problem-set problems')))
 
 (defn create-run
   "create a run and attempts"

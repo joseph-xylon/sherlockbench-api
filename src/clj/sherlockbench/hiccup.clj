@@ -97,7 +97,7 @@
 
 (defn runs-page
   "render the runs page"
-  [runs f-token run-types]
+  [runs f-token problem-sets]
   (let [table (render-runs runs)
         form [:form#pageform {:hx-ext "json-enc"
                               :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
@@ -109,7 +109,15 @@
               " "
               [:select {:name "exam-set"
                         :hx-post "/web/secure/runs/create-run"}
-               [:option {:value "default"} "Create"]
-               (for [{:keys [name- tag]} run-types]
-                 [:option {:value (name tag)} name-])]]]
-    (render-base "Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))
+               [:option {:value "default"} "Create Problem Set"]
+               ;; Group problem sets by namespace
+               (for [[ns-prefix group] (group-by (fn [[k v]] 
+                                                   (let [parts (clojure.string/split (name k) #"/")]
+                                                     (first parts)))
+                                                 problem-sets)]
+                 [:optgroup {:label (clojure.string/capitalize ns-prefix)}
+                  (for [[set-key {:keys [name description]}] group]
+                    [:option {:value (name set-key) 
+                              :title (or description "")} 
+                     name])])]]]
+    (render-base "Problem Set Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))
