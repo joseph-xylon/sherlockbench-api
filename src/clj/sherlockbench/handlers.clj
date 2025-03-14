@@ -3,7 +3,6 @@
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [sherlockbench.api :as api]
-            [sherlockbench.config :refer [benchmark-version default-test-limit]]
             [hiccup2.core :as h]))
 
 (defn not-found-handler
