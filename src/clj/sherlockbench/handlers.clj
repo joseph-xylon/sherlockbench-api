@@ -67,9 +67,10 @@
 (defn display-runs-page
   "home"
   [{queryfn :queryfn
+    config :config
     f-token :anti-forgery-token}]
   (let [runs (queryfn (q/list-runs))
-        problem-sets (config/available-problem-sets)]
+        problem-sets (config/available-problem-sets config)]
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (ph/runs-page (map strip-namespace runs) f-token problem-sets)}))
@@ -93,10 +94,11 @@
 (defn create-run-handler
   "create a run"
   [{queryfn :queryfn
+    config :config
     problems :problems
     {:keys [exam-set]} :body}]
   ;; Validate that the exam-set is one of the available problem sets
-  (let [problem-sets (config/available-problem-sets)]
+  (let [problem-sets (config/available-problem-sets config)]
     (if-not (contains? (set (map name (keys problem-sets))) exam-set)
       {:status 400
        :headers {"Content-Type" "text/html"}

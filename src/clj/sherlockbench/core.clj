@@ -33,13 +33,8 @@
   (let [extra-namespaces (:extra-namespaces config)
         {:keys [problems namespaces tag-names] :as result} (problem-loader/aggregate-problems extra-namespaces)]
     
-    ;; Store problem metadata in config for later use
-    (swap! sherlockbench.config/config-atom assoc 
-           :namespaces namespaces
-           :tag-names tag-names)
-    
-    ;; Return just the problems vector for backward compatibility
-    problems))
+    ;; Return the complete result including problems, namespaces and tag-names
+    result))
 
 ;; db connection
 (defn connect-db
@@ -57,7 +52,9 @@
 
 ;; handler
 (defmethod ig/init-key :sherlockbench/handler [_ {:keys [queryfn config session-store problems]}]
-  (routes/app queryfn config session-store problems))
+  (let [enhanced-config (merge config 
+                              (select-keys problems [:namespaces :tag-names]))]
+    (routes/app queryfn enhanced-config session-store (:problems problems))))
 
 ;; query builder
 (defmethod ig/init-key :sherlockbench/queryfn [_ {:keys [database]}]

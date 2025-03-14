@@ -108,7 +108,10 @@
         wrap-problems (fn [handler]
                         (fn [request]
                           (handler (assoc request 
-                                         :problems problems))))]
+                                         :problems problems))))
+        wrap-config (fn [handler]
+                      (fn [request]
+                        (handler (assoc request :config config))))]
 
     (ring/ring-handler
      (ring/router
@@ -128,7 +131,8 @@
 
         ["secure/"
          {:middleware [wrap-auth
-                       wrap-problems]}
+                       wrap-problems
+                       wrap-config]}
          ["runs/"
           ["display" {:get {:handler hl/display-runs-page}}]
           ["delete-run" {:post {:handler hl/delete-run-handler
@@ -139,7 +143,8 @@
        ;; API
        ["/api/"
         {:middleware [output-to-json
-                      wrap-problems]}
+                      wrap-problems
+                      wrap-config]}
         ["is-pending-run"
          {:post {:handler api/pending-run?
                  :validation {:run-id ::uuid}}}]

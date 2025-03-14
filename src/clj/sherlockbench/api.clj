@@ -14,11 +14,11 @@
 
 (defn filter-by-problem-set
   "Filter problems by problem set configuration"
-  [problem-set all-problems]
+  [problem-set all-problems config]
   (if (nil? problem-set)
     all-problems
     (let [problem-set-id (if (keyword? problem-set) problem-set (keyword problem-set))
-          problem-set-config (get-in config/config [:problem-sets problem-set-id])
+          problem-set-config (get-in config [:problem-sets problem-set-id])
           tags (get-in problem-set-config [:problems :tags] #{})
           names (get-in problem-set-config [:problems :names] #{})]
       
@@ -30,7 +30,7 @@
 
 (defn filter-problems
   "Get the appropriate subset of problems as specified by run type and problem set"
-  [type problems problem-set]
+  [type problems problem-set config]
   (let [;; First filter by anonymous vs official
         problems' (case type 
                     ;; For anonymous runs, still use the :demo tag for backward compatibility
@@ -38,13 +38,13 @@
                     "official" problems)]
     
     ;; Then apply problem set filtering if specified
-    (filter-by-problem-set problem-set problems')))
+    (filter-by-problem-set problem-set problems' config)))
 
 (defn create-run
   "create a run and attempts"
-  [queryfn problems client-id run-type run-state subset]
+  [queryfn problems client-id run-type run-state subset & [provided-config]]
   (let [; get the pertinent subset of the problems
-        problems' (filter-problems run-type problems subset)
+        problems' (filter-problems run-type problems subset provided-config)
         now (java.time.LocalDateTime/now)
         config {:subset subset}
         run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
@@ -68,8 +68,9 @@
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
     problems :problems
+    config :config
     {:keys [client-id subset]} :body}]
-  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)]
+  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset config)]
 
     {:status 200
      :headers {"Content-Type" "application/json"
