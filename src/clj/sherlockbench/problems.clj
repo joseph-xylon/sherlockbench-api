@@ -4,10 +4,11 @@
 (def namespace-name "Sherlock Demo Problems")
 
 ;; Map of tag names - display names for the UI
+;; Simple keywords are automatically namespaced with the current namespace
 (def tag-names
-  {:problems/easy3 "Easy Demo (3 Problems)"
-   :problems/math "Math Problems"
-   :problems/string "String Manipulation"})
+  {:easy3 "Easy Demo (3 Problems)"
+   :math "Math Problems"
+   :string "String Manipulation"})
 
 ;; The list of functions which the LLM will interrogate
 (def problems

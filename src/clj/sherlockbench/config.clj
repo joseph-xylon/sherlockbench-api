@@ -15,7 +15,7 @@
         namespaces (:namespaces config)
         tag-names (:tag-names config)]
     
-    ;; Combine built-in namespace problem sets with custom ones
+    ;; Combine built-in namespace problem sets with custom ones and tag-based sets
     (merge
      ;; Create problem sets for each namespace (namespace/all)
      (reduce-kv
@@ -27,6 +27,17 @@
                   :auto true})))
       {}
       namespaces)
+     
+     ;; Include tag-based problem sets from tag-names map
+     (reduce-kv
+      (fn [acc tag-key display-name]
+        (assoc acc tag-key
+               {:name display-name
+                :description (str "Problems tagged as " (name tag-key))
+                :problems {:tags #{tag-key}}
+                :auto true}))
+      {}
+      tag-names)
      
      ;; Include custom problem sets from config
      problem-sets)))

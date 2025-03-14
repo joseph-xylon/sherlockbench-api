@@ -12,13 +12,12 @@
     (catch IllegalArgumentException _ false)
     (catch NullPointerException _ false)))
 
-(defn filter-by-subset
-  "Filter problems down to the specified subset"
-  [subset all-problems config]
-  (if (nil? subset)
+(defn filter-by-problem-set
+  "Filter problems by a problem set configuration (subset selection)"
+  [problem-set-id all-problems config]
+  (if (nil? problem-set-id)
     all-problems
-    (let [problem-set-id (if (keyword? subset) subset (keyword subset))
-          problem-set-config (get-in config [:problem-sets problem-set-id])
+    (let [problem-set-config (get-in config [:problem-sets problem-set-id])
           tags (get-in problem-set-config [:problems :tags] #{})
           names (get-in problem-set-config [:problems :names] #{})]
       
@@ -28,24 +27,82 @@
                     (contains? names (:name- problem))))
               all-problems))))
 
-(defn filter-problems
-  "Get the appropriate subset of problems as specified by run type and problem set"
-  [type problems subset config]
-  (let [;; First filter by anonymous vs official
-        problems' (case type 
-                    ;; For anonymous runs, default to the included problem-set
-                    "anonymous" (filter #(contains? (:tags %) :problems/all) problems)
-                    "official" problems)]
+(defn tag-name->problem-set
+  "Try to match a simple name like 'easy3' to a proper problem set keyword"
+  [tag-name config]
+  (let [all-problem-sets (keys (get config :problem-sets))
+        ;; Check for exact match first
+        exact-match (first (filter #(= (name %) tag-name) all-problem-sets))]
     
-    ;; Then apply problem set filtering if specified
-    (filter-by-subset subset problems' config)))
+    (if exact-match
+      exact-match
+      ;; Try to find a match with namespaced keywords that end with this name
+      (first (filter #(and (keyword? %) 
+                          (clojure.string/ends-with? (str %) (str "/" tag-name)))
+                    all-problem-sets)))))
+
+(defn filter-problems
+  "Select problems based on run type and optional problem set"
+  [run-type problems problem-set config]
+  (println "Original problem-set:" problem-set)
+  (let [resolved-set (if (and (string? problem-set) (not (re-find #"/" problem-set)))
+                      ;; If it's a simple string with no slash, try to resolve it to a proper problem set
+                      (or (tag-name->problem-set problem-set config)
+                          ;; For direct tag filtering
+                          (keyword "problems" problem-set)
+                          problem-set)
+                      problem-set)]
+    
+    (println "Resolved to problem-set:" resolved-set)
+    
+    (cond
+      ;; Case 1: Anonymous run with no problem set - use only problems from sherlockbench.problems namespace
+      (and (= run-type "anonymous") (nil? resolved-set))
+      (filter #(contains? (:tags %) :problems) problems)
+      
+      ;; Case 2: Anonymous run with problem set - special handling for string tag names in anonymous runs
+      (and (= run-type "anonymous") (string? resolved-set) (not (re-find #"/" resolved-set)))
+      (let [tag-keyword (keyword "problems" resolved-set)
+            problems-namespace (filter #(contains? (:tags %) :problems) problems)]
+        (println "Using direct tag filtering with tag:" tag-keyword)
+        (filter #(contains? (:tags %) tag-keyword) problems-namespace))
+
+      ;; Case 3: Anonymous run with problem set - apply problem set filter but only within sherlockbench.problems
+      (= run-type "anonymous")
+      (let [keyword-set (if (keyword? resolved-set) resolved-set (keyword resolved-set))
+            problems-namespace (filter #(contains? (:tags %) :problems) problems)]
+        (filter-by-problem-set keyword-set problems-namespace config))
+      
+      ;; Case 4: Official run with problem set - apply only problem set filter
+      (and (= run-type "official") (not (nil? resolved-set)))
+      (let [keyword-set (if (keyword? resolved-set) resolved-set (keyword resolved-set))]
+        (filter-by-problem-set keyword-set problems config))
+      
+      ;; Case 5: Official run with no problem set - use all problems
+      :else problems)))
 
 (defn create-run
   "create a run and attempts"
   [queryfn problems client-id run-type run-state subset & [provided-config]]
-  (prn "subset: " subset)
-  (let [                              ; get the pertinent subset of the problems
+  (println "Creating run with subset:" subset)
+  (println "Run type:" run-type)
+  
+  ;; Debug available problem tags
+  (when (and subset (= run-type "anonymous"))
+    (let [p-tags (filter #(contains? (:tags %) :problems) problems)]
+      (println "All tags available in the problems namespace:")
+      (doseq [p p-tags]
+        (println "  -" (:name- p) ":" (:tags p)))))
+  
+  (let [; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset provided-config)
+        _ (println "Filtered to" (count problems') "problems")
+        _ (when (< (count problems') 1)
+            (println "WARNING: No problems were selected with this filter!"))
+        
+        ;; Print problem names for debugging
+        _ (println "Selected problems:" (mapv :name- problems'))
+        
         now (java.time.LocalDateTime/now)
         config {:subset subset}
         run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))

@@ -27,15 +27,32 @@
       (if problems-symbol
         (let [problems @problems-symbol
               namespace-name (when namespace-name-symbol @namespace-name-symbol)
-              tag-names (when tag-names-symbol @tag-names-symbol)
+              original-tag-names (when tag-names-symbol @tag-names-symbol)
               
-              ;; Add namespace tag to each problem
+              ;; Namespace the tag keys in tag-names map
+              namespaced-tag-names (reduce-kv
+                                    (fn [acc tag-key display-name]
+                                      (let [namespaced-key (if (namespace tag-key)
+                                                            tag-key
+                                                            (keyword (name ns-tag) (name tag-key)))]
+                                        (assoc acc namespaced-key display-name)))
+                                    {}
+                                    (or original-tag-names {}))
+              
+              ;; Add namespace tag to each problem and namespace any simple tags
               tagged-problems (map (fn [problem]
-                                    (update problem :tags 
-                                            (fn [tags] 
-                                              (conj (or tags #{}) 
-                                                    ns-tag
-                                                    (keyword (str (name ns-tag) "/all"))))))
+                                     (update problem :tags 
+                                             (fn [tags]
+                                               (let [base-tags (or tags #{})
+                                                     ;; Namespace any simple keywords in the tags set
+                                                     namespaced-tags (set (map (fn [tag]
+                                                                                (if (namespace tag)
+                                                                                  tag
+                                                                                  (keyword (name ns-tag) (name tag))))
+                                                                              base-tags))]
+                                                 (conj namespaced-tags
+                                                       ns-tag
+                                                       (keyword (str (name ns-tag) "/all")))))))
                                    problems)]
           
           (log/info "Loaded" (count problems) "problems from" ns 
@@ -45,7 +62,7 @@
            :namespace ns
            :namespace-tag ns-tag
            :namespace-name (or namespace-name (str ns))
-           :tag-names (or tag-names {})})
+           :tag-names namespaced-tag-names})
         
         (do
           (log/warn "Namespace" ns "does not define 'problems'")

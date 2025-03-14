@@ -110,14 +110,44 @@
               [:select {:name "exam-set"
                         :hx-post "/web/secure/runs/create-run"}
                [:option {:value "default"} "Create Problem Set"]
-               ;; Group problem sets by namespace
-               (for [[ns-prefix group] (group-by (fn [[k v]] 
-                                                   (let [parts (clojure.string/split (name k) #"/")]
-                                                     (first parts)))
-                                                 problem-sets)]
-                 [:optgroup {:label (clojure.string/capitalize ns-prefix)}
-                  (for [[set-key {:keys [name description]}] group]
-                    [:option {:value (str set-key) 
-                              :title (or description "")} 
-                     name])])]]]
+               
+               ;; Group by main categories
+               (let [;; Extract namespace groups (problems, classic, etc.)
+                     namespaced-sets (filter (fn [[k _]] 
+                                              (and (not= (namespace k) "custom")
+                                                   (or (clojure.string/includes? (name k) "all")
+                                                       (clojure.string/includes? (str k) "/")))) 
+                                            problem-sets)
+                     
+                     ;; Group by namespace
+                     grouped-by-ns (group-by (fn [[k _]] 
+                                              (if (namespace k)
+                                                (namespace k)
+                                                (first (clojure.string/split (name k) #"/"))))
+                                            namespaced-sets)
+                     
+                     ;; Custom problem sets
+                     custom-sets (filter (fn [[k _]] 
+                                          (= (namespace k) "custom")) 
+                                        problem-sets)]
+                 
+                 ;; Render all groups
+                 (list
+                  ;; Namespace groups first
+                  (for [[ns-name group] grouped-by-ns]
+                    [:optgroup {:label (clojure.string/capitalize ns-name)}
+                     (for [[set-key {:keys [name description]}] group]
+                       [:option {:value (str set-key) 
+                                :title (or description "")
+                                :data-key (str set-key)}
+                        name])])
+                  
+                  ;; Then custom ones
+                  (when (seq custom-sets)
+                    [:optgroup {:label "Custom Problem Sets"}
+                     (for [[set-key {:keys [name description]}] custom-sets]
+                       [:option {:value (str set-key) 
+                                :title (or description "")
+                                :data-key (str set-key)}
+                        name])])))]]]
     (render-base "Problem Set Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))
