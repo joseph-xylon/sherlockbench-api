@@ -117,7 +117,7 @@
                                                  problem-sets)]
                  [:optgroup {:label (clojure.string/capitalize ns-prefix)}
                   (for [[set-key {:keys [name description]}] group]
-                    [:option {:value (name set-key) 
+                    [:option {:value (str set-key) 
                               :title (or description "")} 
                      name])])]]]
     (render-base "Problem Set Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))

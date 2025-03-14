@@ -1,5 +1,6 @@
 (ns sherlockbench.handlers
   (:require [clojure.set :as set]
+            [clojure.edn :as edn]
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [sherlockbench.api :as api]
@@ -99,11 +100,11 @@
     {:keys [exam-set]} :body}]
   ;; Validate that the exam-set is one of the available problem sets
   (let [problem-sets (config/available-problem-sets config)]
-    (if-not (contains? (set (map name (keys problem-sets))) exam-set)
+    (if-not (contains? (set (map str (keys problem-sets))) exam-set)
       {:status 400
        :headers {"Content-Type" "text/html"}
        :body (str (h/html [:p.error (str "Invalid problem set: " exam-set)]))}
-      (let [problem-set (keyword exam-set)
+      (let [problem-set (when exam-set (edn/read-string exam-set))
             [run-id attempts] (api/create-run queryfn problems nil "official" "pending" problem-set)
             
             ;; now render the page

@@ -12,12 +12,12 @@
     (catch IllegalArgumentException _ false)
     (catch NullPointerException _ false)))
 
-(defn filter-by-problem-set
-  "Filter problems by problem set configuration"
-  [problem-set all-problems config]
-  (if (nil? problem-set)
+(defn filter-by-subset
+  "Filter problems down to the specified subset"
+  [subset all-problems config]
+  (if (nil? subset)
     all-problems
-    (let [problem-set-id (if (keyword? problem-set) problem-set (keyword problem-set))
+    (let [problem-set-id (if (keyword? subset) subset (keyword subset))
           problem-set-config (get-in config [:problem-sets problem-set-id])
           tags (get-in problem-set-config [:problems :tags] #{})
           names (get-in problem-set-config [:problems :names] #{})]
@@ -30,20 +30,21 @@
 
 (defn filter-problems
   "Get the appropriate subset of problems as specified by run type and problem set"
-  [type problems problem-set config]
+  [type problems subset config]
   (let [;; First filter by anonymous vs official
         problems' (case type 
-                    ;; For anonymous runs, still use the :demo tag for backward compatibility
-                    "anonymous" (filter #(contains? (:tags %) :demo) problems)
+                    ;; For anonymous runs, default to the included problem-set
+                    "anonymous" (filter #(contains? (:tags %) :problems/all) problems)
                     "official" problems)]
     
     ;; Then apply problem set filtering if specified
-    (filter-by-problem-set problem-set problems' config)))
+    (filter-by-subset subset problems' config)))
 
 (defn create-run
   "create a run and attempts"
   [queryfn problems client-id run-type run-state subset & [provided-config]]
-  (let [; get the pertinent subset of the problems
+  (prn "subset: " subset)
+  (let [                              ; get the pertinent subset of the problems
         problems' (filter-problems run-type problems subset provided-config)
         now (java.time.LocalDateTime/now)
         config {:subset subset}
