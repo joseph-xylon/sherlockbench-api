@@ -100,15 +100,14 @@
 
 (defn app
   "reitit with format negotiation and input & output coercion"
-  [queryfn config session-store problems]
+  [queryfn session-store problems-component]
   ;; we define a middleware that includes our query builder
   (let [wrap-with-key (fn [key value]
                         (fn [handler]
                           (fn [request]
                             (handler (assoc request key value)))))
         wrap-query-builder (wrap-with-key :queryfn queryfn)
-        wrap-problems (wrap-with-key :problems problems)
-        wrap-config (wrap-with-key :config config)]
+        wrap-problems (wrap-with-key :problems problems-component)]
 
     (ring/ring-handler
      (ring/router
@@ -128,8 +127,7 @@
 
         ["secure/"
          {:middleware [wrap-auth
-                       wrap-problems
-                       wrap-config]}
+                       wrap-problems]}
          ["runs/"
           ["display" {:get {:handler hl/display-runs-page}}]
           ["delete-run" {:post {:handler hl/delete-run-handler
@@ -140,8 +138,7 @@
        ;; API
        ["/api/"
         {:middleware [output-to-json
-                      wrap-problems
-                      wrap-config]}
+                      wrap-problems]}
         ["is-pending-run"
          {:post {:handler api/pending-run?
                  :validation {:run-id ::uuid}}}]

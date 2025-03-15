@@ -4,7 +4,6 @@
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [sherlockbench.api :as api]
-            [sherlockbench.config :as config]
             [hiccup2.core :as h]))
 
 (defn not-found-handler
@@ -68,10 +67,9 @@
 (defn display-runs-page
   "home"
   [{queryfn :queryfn
-    config :config
+    {:keys [problem-sets]} :problems
     f-token :anti-forgery-token}]
-  (let [runs (queryfn (q/list-runs))
-        problem-sets (config/available-problem-sets config)]
+  (let [runs (queryfn (q/list-runs))]
     {:status 200
      :headers {"Content-Type" "text/html"}
      :body (ph/runs-page (map strip-namespace runs) f-token problem-sets)}))
@@ -95,11 +93,11 @@
 (defn create-run-handler
   "create a run"
   [{queryfn :queryfn
-    config :config
-    problems :problems
+    problems-component :problems  
     {:keys [exam-set]} :body}]
-  ;; Validate that the exam-set is one of the available problem sets
-  (let [problem-sets (config/available-problem-sets config)]
+  (let [problem-sets (:problem-sets problems-component)
+        problems (:problems problems-component)]
+    ;; Validate that the exam-set is one of the available problem sets
     (println "Available problem sets:" (keys problem-sets))
     (println "Selected problem set:" exam-set)
     

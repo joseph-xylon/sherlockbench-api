@@ -111,3 +111,35 @@
     {:problems all-problems
      :namespaces namespaces-data
      :tag-names tag-names}))
+
+;; New functionality moved from config.clj to handle problem sets
+(defn available-problem-sets 
+  "Get all available problem sets from the problems component.
+   This replaces config/available-problem-sets and keeps problem
+   filtering logic within the problems component."
+  [{:keys [namespaces tag-names]} custom-problem-sets]
+  (merge
+   ;; Create problem sets for each namespace (namespace/all)
+   (reduce-kv
+    (fn [acc ns-tag ns-data]
+      (let [ns-all-key (keyword (str (name ns-tag) "/all"))]
+        (assoc acc ns-all-key
+               {:name (str (:name ns-data) " (All)")
+                :description (str "All problems from " (:name ns-data))
+                :auto true})))
+    {}
+    namespaces)
+   
+   ;; Include tag-based problem sets from tag-names map
+   (reduce-kv
+    (fn [acc tag-key display-name]
+      (assoc acc tag-key
+             {:name display-name
+              :description (str "Problems tagged as " (name tag-key))
+              :problems {:tags #{tag-key}}
+              :auto true}))
+    {}
+    tag-names)
+   
+   ;; Include custom problem sets from config
+   custom-problem-sets))

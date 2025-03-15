@@ -125,10 +125,11 @@
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
   [{queryfn :queryfn
-    problems :problems
-    config :config
+    problems-component :problems
     {:keys [client-id subset]} :body}]
-  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset config)]
+  (let [problems-list (:problems problems-component)
+        config {:problem-sets (:problem-sets problems-component)}
+        [run-id attempts] (create-run queryfn problems-list client-id "anonymous" "started" subset config)]
 
     {:status 200
      :headers {"Content-Type" "application/json"
@@ -208,6 +209,9 @@
                  "Access-Control-Allow-Origin" "*"}
        :body {:error "your attempt-id doesn't match your run-id"}})))
 
+;; The problems component is always a map with structure:
+;; {:problems [...], :problem-sets {...}, :namespaces {...}, :tag-names {...}}
+
 (defn get-problem-by-name
   [problems fn-name]
   (first (filter #(= fn-name (:name- %)) problems)))
@@ -216,10 +220,15 @@
   "a middleware to validate the args of a test function"
   [handler]
   (fn [{queryfn :queryfn
-        problems :problems
+        problems-component :problems
         {:keys [run-id attempt-id args]} :body
         fn-name :fn-name :as request}]
-    (let [this-problem (get-problem-by-name problems fn-name)
+    (let [problems-list (:problems problems-component)
+          _ (when (nil? problems-list) 
+              (log/error "Problems list is nil. Problems component:" problems-component))
+          this-problem (get-problem-by-name problems-list fn-name)
+          _ (when (nil? this-problem) 
+              (log/error "Problem not found for function name:" fn-name))
           {:keys [valid? coerced errors]} (validate-and-coerce (:args this-problem) args)]
       (if valid?
         ;; add the validated args and continue
@@ -229,7 +238,10 @@
 
         ;; break as these args are invalid
         (do
-          (log/info errors)
+          (log/error "Validation errors:" errors)
+          (log/error "Function name:" fn-name)
+          (log/error "Args:" args)
+          (log/error "Problem spec:" (:args this-problem))
 
           {:status 400
            :headers {"Content-Type" "application/json"
@@ -245,7 +257,7 @@
 (defn test-function
   "run the test"
   [{queryfn :queryfn
-    problems :problems
+    problems-component :problems
     validated-args :validated-args
     fn-name :fn-name
     {:keys [attempt-id]} :body}]
@@ -266,7 +278,8 @@
        :body {:error "you cannot test the function after you start the validations"}}
       
       :else
-      (let [problem (get-problem-by-name problems fn-name)
+      (let [problems-list (:problems problems-component)
+            problem (get-problem-by-name problems-list fn-name)
             output (apply-fn problem validated-args)]
 
         {:status 200
@@ -294,13 +307,14 @@
   "just give them the next verification for their attempt"
   [{queryfn :queryfn
     fn-name :fn-name
-    problems :problems
+    problems-component :problems
     {:keys [attempt-id]} :body}]
 
   (queryfn (q/started-verifications! attempt-id)) ; record we've started
 
-  (let [next-verification (first (queryfn (q/get-verifications attempt-id)))
-        output-type (:output-type (get-problem-by-name problems fn-name))]
+  (let [problems-list (:problems problems-component)
+        next-verification (first (queryfn (q/get-verifications attempt-id)))
+        output-type (:output-type (get-problem-by-name problems-list fn-name))]
     (if (nil? next-verification)
       {:status 200
        :headers {"Content-Type" "application/json"
@@ -323,10 +337,11 @@
   "let the client attempt a verification"
   [{queryfn :queryfn
     fn-name :fn-name
-    problems :problems
+    problems-component :problems
     {:keys [attempt-id prediction]} :body}]
 
-  (let [problem (get-problem-by-name problems fn-name)
+  (let [problems-list (:problems problems-component)
+        problem (get-problem-by-name problems-list fn-name)
         output-type (:output-type problem)
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
