@@ -140,3 +140,17 @@
       (is (sequential? (:problems result)))
       (is (map? (:namespaces result)))
       (is (map? (:tag-names result))))))
+
+(comment
+  (test-namespace->tag)
+  (test-create-ns-all-tag)
+  (test-namespace-tag-key)
+  (test-namespace-tag-keys)
+  (test-namespace-problem-tags)
+  (test-create-namespace-problem-sets)
+  (test-create-tag-based-problem-sets)
+  (test-available-problem-sets)
+  (test-extract-namespace-data)
+  (test-extract-tag-names)
+  (test-aggregate-problems-structure)
+  )
