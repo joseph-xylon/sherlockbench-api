@@ -4,7 +4,8 @@
             [sherlockbench.queries :as q]
             [sherlockbench.hiccup :as ph]
             [sherlockbench.api :as api]
-            [hiccup2.core :as h]))
+            [hiccup2.core :as h]
+            [clojure.pprint :refer [pprint]]))
 
 (defn not-found-handler
   "display not found page"

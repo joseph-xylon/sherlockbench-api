@@ -4,40 +4,72 @@
 
 (deftest test-group-problem-sets
   (testing "grouping problem sets by namespace and type"
-    (let [problem-sets {;; Namespaced sets (standard)
-                        :problems/easy {:name "Easy Problems" :description "Beginner friendly problems"}
-                        :problems/medium {:name "Medium Problems" :description "Intermediate level problems"}
-                        :problems/hard {:name "Hard Problems" :description "Advanced problems"}
-                        
-                        ;; Sets with slashes in the name (no namespace)
-                        :algo/sorting {:name "Sorting Algorithms" :description "Sort implementation problems"}
-                        :ds/trees {:name "Tree Problems" :description "Binary tree problems"}
-                        
-                        ;; Sets with "all" in the name
-                        :problems/all {:name "All Problems" :description "Complete set of problems"}
-                        
-                        ;; Custom sets
-                        :custom/set1 {:name "Custom Set 1" :description "First custom set"}
-                        :custom/set2 {:name "Custom Set 2" :description "Second custom set"}
-                        
-                        ;; Unmatched set (should be filtered out)
-                        :special-set {:name "Special Set" :description "Should not be included"}}
+    (let [problem-sets {:problems/all
+                        {:name "Sherlock Demo Problems (All)",
+                         :description "Problems tagged as all",
+                         :problems {:tags #{:problems/all}},
+                         :auto true},
+                        :problems/math
+                        {:name "Math Problems",
+                         :description "Problems tagged as math",
+                         :problems {:tags #{:problems/math}},
+                         :auto true},
+                        :problems/easy3
+                        {:name "Easy Demo (3 Problems)",
+                         :description "Problems tagged as easy3",
+                         :problems {:tags #{:problems/easy3}},
+                         :auto true},
+                        :custom/easy3
+                        {:name "Beginner Problems", :problems {:tags #{:problems/easy3}}},
+                        :ng-problems/all
+                        {:name "Navigation Problems (All)",
+                         :description "Problems tagged as all",
+                         :problems {:tags #{:ng-problems/all}},
+                         :auto true},
+                        :interrobench-problems/representative10
+                        {:name "Representative 10",
+                         :description "Problems tagged as representative10",
+                         :problems {:tags #{:interrobench-problems/representative10}},
+                         :auto true},
+                        :custom/myfavs
+                        {:name "My Favorites",
+                         :problems
+                         {:tags #{:problems/math :classic/math},
+                          :names #{"add & subtract" "is prime"}}},
+                        :interrobench-problems/all
+                        {:name "Interrobench Problems (All)",
+                         :description "Problems tagged as all",
+                         :problems {:tags #{:interrobench-problems/all}},
+                         :auto true},
+                        :custom/string-problems
+                        {:name "String Manipulation",
+                         :problems {:tags #{:classic/string :problems/string}}},
+                        :problems/string
+                        {:name "String Manipulation",
+                         :description "Problems tagged as string",
+                         :problems {:tags #{:problems/string}},
+                         :auto true},
+                        :classic-problems/all
+                        {:name "Classic Problems (All)",
+                         :description "Problems tagged as all",
+                         :problems {:tags #{:classic-problems/all}},
+                         :auto true}}
           
           result (handlers/group-problem-sets problem-sets)]
       
       ;; Check namespaced groups structure
       (is (map? (:namespaced result)) "Namespaced result should be a map")
-      (is (= #{"problems" "algo" "ds"} (set (keys (:namespaced result)))) "Should have correct namespace keys")
+      (is (= #{"ng-problems" "problems" "classic-problems" "interrobench-problems"} (set (keys (:namespaced result)))) "Should have correct namespace keys")
       
       ;; Check problems namespace contents
       (let [problems-group (get-in result [:namespaced "problems"])]
         (is (= 4 (count problems-group)) "Problems namespace should have 4 entries")
         (is (some #(= :problems/all (first %)) problems-group) "Should include the 'all' entry")
-        (is (some #(= :problems/easy (first %)) problems-group) "Should include the 'easy' entry"))
+        (is (some #(= :problems/easy3 (first %)) problems-group) "Should include the 'easy' entry"))
       
       ;; Check custom sets
       (is (seq (:custom result)) "Custom sets should not be empty")
-      (is (= 2 (count (:custom result))) "Should have 2 custom sets")
+      (is (= 3 (count (:custom result))) "Should have 2 custom sets")
       (is (every? #(= (namespace (first %)) "custom") (:custom result)) "All custom sets should have 'custom' namespace")
       
       ;; Check that special set is filtered out
