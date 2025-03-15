@@ -64,15 +64,40 @@
   (let [rename-key (fn [k] (keyword (name k)))]
     (set/rename-keys m (zipmap (keys m) (map rename-key (keys m))))))
 
+(defn group-problem-sets
+  "Group problem sets by namespace and type for display"
+  [problem-sets]
+  (let [;; Extract namespace groups (problems, classic, etc.)
+        namespaced-sets (filter (fn [[k _]] 
+                                (and (not= (namespace k) "custom")
+                                    (or (clojure.string/includes? (name k) "all")
+                                        (clojure.string/includes? (str k) "/")))) 
+                              problem-sets)
+        
+        ;; Group by namespace
+        grouped-by-ns (group-by (fn [[k _]] 
+                                (if (namespace k)
+                                  (namespace k)
+                                  (first (clojure.string/split (name k) #"/"))))
+                              namespaced-sets)
+        
+        ;; Custom problem sets
+        custom-sets (filter (fn [[k _]] 
+                            (= (namespace k) "custom")) 
+                          problem-sets)]
+    {:namespaced grouped-by-ns
+     :custom custom-sets}))
+
 (defn display-runs-page
   "home"
   [{queryfn :queryfn
     {:keys [problem-sets]} :problems
     f-token :anti-forgery-token}]
-  (let [runs (queryfn (q/list-runs))]
+  (let [runs (queryfn (q/list-runs))
+        grouped-sets (group-problem-sets problem-sets)]
     {:status 200
      :headers {"Content-Type" "text/html"}
-     :body (ph/runs-page (map strip-namespace runs) f-token problem-sets)}))
+     :body (ph/runs-page (map strip-namespace runs) f-token grouped-sets)}))
 
 (defn delete-run-handler
   "delete a run given an id"
