@@ -91,19 +91,6 @@
       (is (= #{:problems/easy} (get-in result [:problems/easy :problems :tags])))
       (is (= true (get-in result [:problems/easy :auto]))))))
 
-(deftest test-available-problem-sets
-  (testing "Combining all problem sets"
-    (let [problems-component {:namespaces {:problems {:name "Sherlock Problems"}}
-                              :tag-names {:problems/easy "Easy Problems"}}
-          custom-problem-sets {:custom {:name "Custom Set"
-                                       :description "Custom problem set"}}
-          result (pl/available-problem-sets problems-component custom-problem-sets)]
-      (is (= 3 (count result)))
-      (is (contains? result :problems/all))
-      (is (contains? result :problems/easy))
-      (is (contains? result :custom))
-      (is (= "Custom Set" (get-in result [:custom :name]))))))
-
 ;; Tests for namespace data extraction
 
 (deftest test-extract-namespace-data
@@ -126,20 +113,25 @@
               :easy "Easy Tests"}
              result)))))
 
-;; Integration test for load and aggregate
+;; Integration test for combined function
 ;; This doesn't test the actual functionality since it requires loading 
 ;; real namespaces, but it tests the structure of the result
 
-(deftest test-aggregate-problems-structure
-  (testing "Structure of aggregated problems result"
-    (let [result (pl/aggregate-problems [])] ; Empty list to avoid actual loading
+(deftest test-aggregate-problems-with-sets-structure
+  (testing "Structure of result from combined aggregation and problem sets function"
+    (let [custom-problem-sets {:custom {:name "Custom Set"
+                                        :description "Custom problem set"}}
+          result (pl/aggregate-problems-with-sets [] custom-problem-sets)] ; Empty list to avoid actual loading
       (is (map? result))
       (is (contains? result :problems))
       (is (contains? result :namespaces))
       (is (contains? result :tag-names))
+      (is (contains? result :problem-sets))
       (is (sequential? (:problems result)))
       (is (map? (:namespaces result)))
-      (is (map? (:tag-names result))))))
+      (is (map? (:tag-names result)))
+      (is (map? (:problem-sets result)))
+      (is (contains? (:problem-sets result) :custom)))))
 
 (comment
   (test-namespace->tag)
@@ -149,8 +141,7 @@
   (test-namespace-problem-tags)
   (test-create-namespace-problem-sets)
   (test-create-tag-based-problem-sets)
-  (test-available-problem-sets)
   (test-extract-namespace-data)
   (test-extract-tag-names)
-  (test-aggregate-problems-structure)
+  (test-aggregate-problems-with-sets-structure)
   )

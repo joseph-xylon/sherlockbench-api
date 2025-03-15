@@ -157,7 +157,7 @@
       load-namespace-symbols
       process-loaded-namespace))
 
-;; Functions for aggregating problems from multiple namespaces
+;; Functions for aggregating problems and generating problem sets
 
 (defn extract-namespace-data
   "Extract namespace metadata from loaded namespace data"
@@ -173,45 +173,6 @@
     (-> acc
         (assoc ns-all-tag (str namespace-name " (All)"))
         (merge tag-names))))
-
-(defn aggregate-problems
-  "Combines problem definitions from multiple namespaces and collects metadata.
-   
-   This function:
-   1. Loads problems from sherlockbench.problems and any additional provided namespaces
-   2. Combines all problem definitions into a single sequence
-   3. Collects metadata about each namespace for reference
-   4. Merges all tag name mappings with proper namespacing
-   
-   The structure allows the system to:
-   - Display problems from multiple sources
-   - Group problems by namespace or tags
-   - Provide readable labels for UI display
-   - Manage the namespacing of tags to avoid conflicts
-   
-   Parameters:
-   - namespaces: A sequence of namespace symbols to load (e.g., ['extra.classic-problems])
-   
-   Returns a map with:
-   - :problems - Vector of all problem definitions with properly namespaced tags
-   - :namespaces - Map of namespace tags to metadata about each namespace
-   - :tag-names - Combined map of fully qualified tag keywords to display names"
-  [namespaces]
-  (let [all-ns (conj namespaces 'sherlockbench.problems)
-        loaded-data (map load-problems all-ns)
-        all-problems (mapcat :problems loaded-data)
-        
-        ;; Collect namespace data for reference
-        namespaces-data (reduce extract-namespace-data {} loaded-data)
-        
-        ;; Combine all tag names from all namespaces
-        tag-names (reduce extract-tag-names {} loaded-data)]
-    
-    {:problems all-problems
-     :namespaces namespaces-data
-     :tag-names tag-names}))
-
-;; Functions for creating problem sets
 
 (defn create-namespace-problem-sets
   "Create problem sets for each namespace"
@@ -239,37 +200,51 @@
    {}
    tag-names))
 
-(defn available-problem-sets 
-  "Generates all available problem sets by combining namespace-based, tag-based, 
-   and custom problem sets.
+(defn aggregate-problems-with-sets
+  "Combines problem definitions from multiple namespaces, collects metadata, and generates problem sets.
    
-   A problem set is a named collection of problems that can be used to:
-   - Group related problems for display in the UI
-   - Filter problems for different types of runs or challenges
-   - Organize problems by difficulty, topic, or source
-   
-   This function creates three types of problem sets:
-   1. Namespace-based sets - All problems from a specific namespace (e.g., :problems/all)
-   2. Tag-based sets - All problems with a specific tag (e.g., :problems/math)
-   3. Custom sets - Manually defined in the application config
+   This function:
+   1. Loads problems from sherlockbench.problems and any additional provided namespaces
+   2. Combines all problem definitions into a single sequence
+   3. Collects metadata about each namespace for reference
+   4. Merges all tag name mappings with proper namespacing
+   5. Generates problem sets based on namespaces, tags, and custom configurations
    
    Parameters:
-   - problems-component: A map containing :namespaces and :tag-names from aggregate-problems
+   - namespaces: A sequence of namespace symbols to load (e.g., ['extra.classic-problems])
    - custom-problem-sets: A map of custom problem sets from the application config
    
-   Returns:
-   A map of problem set keywords to problem set definitions, where each definition has:
-   - :name - Human-readable name for UI display
-   - :description - Longer explanation of what's in the set
-   - :problems (for tag-based sets) - Criteria for including problems
-   - :auto - Flag indicating if the set was auto-generated"
-  [{:keys [namespaces tag-names]} custom-problem-sets]
-  (merge
-   ;; Create problem sets for each namespace (namespace/all)
-   (create-namespace-problem-sets namespaces)
-   
-   ;; Include tag-based problem sets from tag-names map
-   (create-tag-based-problem-sets tag-names)
-   
-   ;; Include custom problem sets from config
-   custom-problem-sets))
+   Returns a map with:
+   - :problems - Vector of all problem definitions with properly namespaced tags
+   - :namespaces - Map of namespace tags to metadata about each namespace
+   - :tag-names - Combined map of fully qualified tag keywords to display names
+   - :problem-sets - Map of problem set keywords to problem set definitions"
+  [namespaces custom-problem-sets]
+  (let [all-ns (conj namespaces 'sherlockbench.problems)
+        loaded-data (map load-problems all-ns)
+        all-problems (mapcat :problems loaded-data)
+        
+        ;; Collect namespace data for reference
+        namespaces-data (reduce extract-namespace-data {} loaded-data)
+        
+        ;; Combine all tag names from all namespaces
+        tag-names (reduce extract-tag-names {} loaded-data)
+        
+        ;; Create base result
+        result {:problems all-problems
+                :namespaces namespaces-data
+                :tag-names tag-names}
+        
+        ;; Generate problem sets
+        problem-sets (merge
+                      ;; Create problem sets for each namespace (namespace/all)
+                      (create-namespace-problem-sets namespaces-data)
+                      
+                      ;; Include tag-based problem sets from tag-names map
+                      (create-tag-based-problem-sets tag-names)
+                      
+                      ;; Include custom problem sets from config
+                      custom-problem-sets)]
+    
+    ;; Add problem sets to the result
+    (assoc result :problem-sets problem-sets)))

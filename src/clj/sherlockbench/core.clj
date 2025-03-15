@@ -31,12 +31,10 @@
 ;; problems loader
 (defmethod ig/init-key :sherlockbench/problems [_ {:keys [config]}]
   (let [extra-namespaces (:extra-namespaces config)
-        {:keys [problems namespaces tag-names] :as result} (problem-loader/aggregate-problems extra-namespaces)
-        ;; Generate problem sets within the problems component
-        problem-sets (problem-loader/available-problem-sets result (:problem-sets config))]
+        custom-problem-sets (:problem-sets config)]
     
-    ;; Return the complete, self-contained result including problem sets
-    (assoc result :problem-sets problem-sets)))
+    ;; Use the combined function that generates problems and problem sets in one go
+    (problem-loader/aggregate-problems-with-sets extra-namespaces custom-problem-sets)))
 
 ;; db connection
 (defn connect-db
