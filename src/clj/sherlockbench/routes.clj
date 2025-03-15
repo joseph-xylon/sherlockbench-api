@@ -102,16 +102,13 @@
   "reitit with format negotiation and input & output coercion"
   [queryfn config session-store problems]
   ;; we define a middleware that includes our query builder
-  (let [wrap-query-builder (fn [handler]
-                             (fn [request]
-                               (handler (assoc request :queryfn queryfn))))
-        wrap-problems (fn [handler]
-                        (fn [request]
-                          (handler (assoc request 
-                                         :problems problems))))
-        wrap-config (fn [handler]
-                      (fn [request]
-                        (handler (assoc request :config config))))]
+  (let [wrap-with-key (fn [key value]
+                        (fn [handler]
+                          (fn [request]
+                            (handler (assoc request key value)))))
+        wrap-query-builder (wrap-with-key :queryfn queryfn)
+        wrap-problems (wrap-with-key :problems problems)
+        wrap-config (wrap-with-key :config config)]
 
     (ring/ring-handler
      (ring/router
