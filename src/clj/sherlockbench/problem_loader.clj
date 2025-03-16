@@ -1,23 +1,107 @@
 (ns sherlockbench.problem-loader
-  (:require [clojure.tools.logging :as log]))
+  (:require [clojure.tools.logging :as log]
+            [clojure.pprint :refer [pprint]]
+            [clojure.string :as str]))
+
+(comment
+  ;; When read read in the problems we want to build a data structure like
+  ;; this:
+  {"Sample Problems"
+   {:sherlockbench.sample-problems/all {:name ""
+                                        :problems []}
+    :sherlockbench.sample-problems/easy3 {:name ""
+                                          :problems []}
+    :sherlockbench.sample-problems/math {:name ""
+                                         :problems []}}
+
+   "Classic Problems"
+   {:extra.classic/all {:name ""
+                        :problems []}}
+
+   "Custom Problems"
+   {:custom-myfavs {:name ""
+                    :problems []}}}
+  )
+
+(defn assemble-tagged-set
+  [tag problems]
+  (filterv (comp tag :tags) problems))
+
+(defn rfn
+  [problems acc tag name]
+  (assoc acc tag {:name name
+                  :problems (assemble-tagged-set tag problems)}))
 
 (defn load-problems
   "Safely load the problems from a namespace"
   [ns]
-  (try
-    (require ns)
-    (let [problems-symbol (ns-resolve ns 'problems)]
-      (if problems-symbol
-        (do (log/info "Loaded problems from" ns)
-          @problems-symbol)
-        (do
-          (log/warn "Namespace" ns "does not define 'problems'")
-          [])))
-    (catch Exception e
-      (log/error "Failed to load problems from" ns ":" (.getMessage e))
-      [])))
+  (require ns)
+  (let [[problems-symbol name-symbol tags-symbol] (map #(ns-resolve ns %) ['problems 'namespace-name 'tag-names])]
+    (if (and problems-symbol name-symbol tags-symbol)
+      (do (log/info "Loaded problems from" ns)
+          {@name-symbol (reduce-kv (partial rfn @problems-symbol) {} @tags-symbol)})
+      (do
+        (log/warn "Problem loading namespace " ns)
+        []))))
+
+(defn string-to-tag
+  [s]
+  (->> s
+       (str/lower-case)
+       (re-seq #"[a-z0-9]")
+       (apply str "custom-")
+       keyword))
+
+(defn flatten-problems
+  "just get all the problems out of the data-structure"
+  [ns-problems]
+  (let [all-problems (for [category-map (vals ns-problems)       ;; First level (namespaces)
+                           subcategory-map (vals category-map) ;; Second level (problem-sets)
+                           :when (:problems subcategory-map)]  ;; Third level (problems)
+                       (:problems subcategory-map))]
+    (vec (apply concat all-problems))))
+
+(defn filter-by-name
+  "Returns a vector of maps from coll where (get map k) is in values-set."
+  [coll values]
+  (let [values-set (set values)]
+    (filterv #(contains? values-set (get % :name-)) coll)))
+
+(defn filter-by-tags
+  "return a vector of only those maps which have the :tags key value containing one of
+   the specified values"
+  [maps tag-values]
+  (let [tag-set (set tag-values)]
+    (filterv
+     (fn [m]
+       (boolean (some tag-set (:tags m))))
+     maps)))
+
+(defn custom-rfn
+  [ns-problems acc name {:keys [tags names]}]
+  (let [flat-problems (flatten-problems ns-problems)
+        problems (conj (filter-by-name flat-problems names)
+                       (filter-by-tags flat-problems tags))]
+    (assoc acc (string-to-tag name) {:name name
+                                     :problems problems})))
+
+(defn assemble-custom-problem-sets
+  [custom-problem-sets namespace-problems]
+  (reduce-kv (partial custom-rfn namespace-problems) {} custom-problem-sets)
+  )
 
 (defn aggregate-problems
   "Combine all problems from the namespaces"
-  [namespaces]
-  (apply concat (map load-problems (conj namespaces 'sherlockbench.problems))))
+  [namespaces custom-problem-sets]
+  (let [namespace-list (conj namespaces 'sherlockbench.sample-problems)
+        namespace-problems (reduce conj {} (map load-problems namespace-list))
+        ;; custom-problems (assemble-custom-problem-sets custom-problem-sets namespace-problems)
+        ]
+    namespace-problems
+    ))
+
+(comment
+  (pprint (load-problems 'sherlockbench.sample-problems))
+  (pprint (aggregate-problems ['extra.classic-problems] []))
+  (pprint (get-all-problems (aggregate-problems ['extra.classic-problems] [])))
+  )

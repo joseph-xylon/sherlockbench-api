@@ -3,7 +3,8 @@
             [sherlockbench.queries :as q]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [clojure.pprint :refer [pprint]]))
 
 (defn valid-uuid? [uuid]
   (try

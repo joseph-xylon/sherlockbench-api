@@ -8,7 +8,8 @@
             [sherlockbench.routes :as routes]
             [sherlockbench.add-user :refer [add-user]]
             [sherlockbench.problem-loader :as problem-loader]
-            [ring.redis.session :refer [redis-store read-redis-session write-redis-session]])
+            [ring.redis.session :refer [redis-store read-redis-session write-redis-session]]
+            [clojure.pprint :refer [pprint]])
   (:gen-class))
 
 (defn read-edn-file [file-path]
