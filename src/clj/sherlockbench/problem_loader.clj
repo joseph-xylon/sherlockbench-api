@@ -62,21 +62,31 @@
     all-problems))
 
 (defn filter-by-name
-  "Returns a vector of maps from coll where the namespace and name match."
+  "Returns a vector of maps from coll where the namespace and name match.
+   For each value in values, finds the first matching problem."
   [coll values]
-  (filterv (fn [{:keys [namespace name-]}]
-             (some identity (for [v values]
-                              (= v (list (str namespace) name-))))) coll))
+  (vec
+   (for [v values
+         :let [match (first (filter (fn [{:keys [namespace name-]}]
+                                      (= v (list (str namespace) name-)))
+                                    coll))]
+         :when match]
+     match)))
 
 (defn filter-by-tags
-  "return a vector of only those maps which have the :tags key value containing one of
-   the specified values"
+  "Returns problems that match any of the given tags, with duplicates removed"
   [maps tag-values]
-  (let [tag-set (set tag-values)]
-    (filterv
-     (fn [m]
-       (boolean (some tag-set (:tags m))))
-     maps)))
+  (let [tag-set (set tag-values)
+        matching-problems (filterv
+                          (fn [m]
+                            (boolean (some tag-set (:tags m))))
+                          maps)]
+    ;; De-duplicate based on namespace and name combination
+    (vec (vals (reduce (fn [acc problem]
+                        (let [key [(:namespace problem) (:name- problem)]]
+                          (assoc acc key problem)))
+                      {}
+                      matching-problems)))))
 
 (defn custom-rfn
   [ns-problems acc name {:keys [tags names]}]
