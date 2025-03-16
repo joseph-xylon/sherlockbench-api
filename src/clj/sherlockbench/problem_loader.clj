@@ -53,19 +53,20 @@
        keyword))
 
 (defn flatten-problems
-  "just get all the problems out of the data-structure"
+  "get all the problems out of the data-structure, adding a key for namespace"
   [ns-problems]
-  (let [all-problems (for [category-map (vals ns-problems)       ;; First level (namespaces)
-                           subcategory-map (vals category-map) ;; Second level (problem-sets)
-                           :when (:problems subcategory-map)]  ;; Third level (problems)
-                       (:problems subcategory-map))]
-    (vec (apply concat all-problems))))
+  (let [all-problems (for [namespace-map (vals ns-problems)
+                           [ns problem-map] namespace-map
+                           problem (:problems problem-map)]
+                       (assoc problem :namespace (namespace ns)))]
+    all-problems))
 
 (defn filter-by-name
-  "Returns a vector of maps from coll where (get map k) is in values-set."
+  "Returns a vector of maps from coll where the namespace and name match."
   [coll values]
-  (let [values-set (set values)]
-    (filterv #(contains? values-set (get % :name-)) coll)))
+  (filterv (fn [{:keys [namespace name-]}]
+             (some identity (for [v values]
+                              (= v (list (str namespace) name-))))) coll))
 
 (defn filter-by-tags
   "return a vector of only those maps which have the :tags key value containing one of
@@ -80,8 +81,8 @@
 (defn custom-rfn
   [ns-problems acc name {:keys [tags names]}]
   (let [flat-problems (flatten-problems ns-problems)
-        problems (conj (filter-by-name flat-problems names)
-                       (filter-by-tags flat-problems tags))]
+        problems (concat (filter-by-name flat-problems names)
+                         (filter-by-tags flat-problems tags))]
     (assoc acc (string-to-tag name) {:name name
                                      :problems problems})))
 
@@ -95,13 +96,20 @@
   [namespaces custom-problem-sets]
   (let [namespace-list (conj namespaces 'sherlockbench.sample-problems)
         namespace-problems (reduce conj {} (map load-problems namespace-list))
-        ;; custom-problems (assemble-custom-problem-sets custom-problem-sets namespace-problems)
+        custom-problems (assemble-custom-problem-sets custom-problem-sets namespace-problems)
         ]
-    namespace-problems
+    custom-problems
+    ;;namespace-problems
     ))
 
 (comment
   (pprint (load-problems 'sherlockbench.sample-problems))
-  (pprint (aggregate-problems ['extra.classic-problems] []))
-  (pprint (get-all-problems (aggregate-problems ['extra.classic-problems] [])))
+  (aggregate-problems ['extra.classic-problems 'extra.interrobench-problems]
+                      {"My Favorites" {:names [(list "sherlockbench.sample-problems" "add & subtract")
+                                               (list "extra.interrobench-problems" "find-higher-number")]}})
+
+
+
+  (pprint (flatten-problems (aggregate-problems ['extra.classic-problems] [])))
+  (flatten-problems (aggregate-problems ['extra.classic-problems] []))
   )
