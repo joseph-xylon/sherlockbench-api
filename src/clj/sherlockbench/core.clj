@@ -31,8 +31,8 @@
 
 ;; problems loader
 (defmethod ig/init-key :sherlockbench/problems [_ {:keys [config]}]
-  (let [extra-namespaces (:extra-namespaces config)]
-    (problem-loader/aggregate-problems extra-namespaces)))
+  (let [{:keys [extra-namespaces custom-problem-sets]} config]
+    (problem-loader/aggregate-problems extra-namespaces custom-problem-sets)))
 
 ;; db connection
 (defn connect-db

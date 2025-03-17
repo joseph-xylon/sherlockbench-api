@@ -66,12 +66,12 @@
 (defn display-runs-page
   "home"
   [{queryfn :queryfn
-    run-types :run-types
+    problems :problems
     f-token :anti-forgery-token}]
   (let [runs (queryfn (q/list-runs))]
     {:status 200
      :headers {"Content-Type" "text/html"}
-     :body (ph/runs-page (map strip-namespace runs) f-token run-types)}))
+     :body (ph/runs-page (map strip-namespace runs) f-token problems)}))
 
 (defn delete-run-handler
   "delete a run given an id"

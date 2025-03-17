@@ -1,6 +1,6 @@
 (ns sherlockbench.problem-test
   (:require [clojure.test :refer :all]
-            [sherlockbench.problems :refer [problems]]))
+            [sherlockbench.sample-problems :refer [problems]]))
 
 (defn find-map-by-key-value [key value coll]
   (some #(when (= (key %) value) %) coll))

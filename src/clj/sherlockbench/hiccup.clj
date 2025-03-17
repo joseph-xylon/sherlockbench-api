@@ -97,7 +97,7 @@
 
 (defn runs-page
   "render the runs page"
-  [runs f-token run-types]
+  [runs f-token problems]
   (let [table (render-runs runs)
         form [:form#pageform {:hx-ext "json-enc"
                               :hx-headers (format "{\"X-CSRF-Token\": \"%s\"}" f-token)
@@ -110,6 +110,9 @@
               [:select {:name "exam-set"
                         :hx-post "/web/secure/runs/create-run"}
                [:option {:value "default"} "Create"]
-               (for [{:keys [name- tag]} run-types]
-                 [:option {:value (name tag)} name-])]]]
+               (for [[group-name v] problems]
+                 [:optgroup {:label group-name}
+                  (for [[set-id {name- :name}] v]
+                    [:option {:value (str set-id)} name-])])]]]
+
     (render-base "Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))
