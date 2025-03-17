@@ -5,7 +5,8 @@
 ;; problem-sets are defined by tag and name
 (def tag-names
   {::all "All"
-   ::easy3 "3 Easy Problems"})
+   ::easy3 "3 Easy Problems"
+   ::math "Math"})
 
 (def problems
   [
@@ -16,7 +17,7 @@
     :verifications [[1, 2, 3], [10, 5, 2], [7, 2, 7]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::demo ::easy3}}
+    :tags #{::all ::easy3 ::math}}
 
    {:name- "is prime"
     :args ["integer"]
@@ -32,7 +33,7 @@
     :verifications [[23] [4] [13] [25]]
     :output-type "boolean"
     :test-limit 20
-    :tags #{::all ::demo ::easy3}}
+    :tags #{::all ::easy3 ::math}}
 
    {:name- "modulus 3 to fruit"
     :args ["integer"]
@@ -44,7 +45,7 @@
     :verifications [[12], [-1], [6]]
     :output-type "string"
     :test-limit 20
-    :tags #{::all ::demo ::easy3}}
+    :tags #{::all ::easy3 ::math}}
 
    {:name- "ignore one"
     :args ["integer" "integer" "integer"]
@@ -53,7 +54,7 @@
     :verifications [[3, 2, 9], [4, 5, 2], [0, 9, 3]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::math}}
 
    {:name- "count vowels"
     :args ["string"]
@@ -74,7 +75,7 @@
     :verifications [[4, 5, false],[7, 3, false], [10, -2, true]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::math}}
 
    {:name- "concat nth char"
     :args ["string" "string" "integer"]
@@ -92,7 +93,7 @@
     :verifications [[4], [24], [39]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::math}}
 
    {:name- "filter consonants and vowels"
     :args ["string"]

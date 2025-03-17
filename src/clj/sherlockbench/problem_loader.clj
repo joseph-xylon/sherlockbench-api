@@ -21,9 +21,18 @@
    "Custom Problems"
    {:custom-myfavs {:name ""
                     :problems []}}}
+
+  ;; Note some problems will be in multiple categories so this structure is
+  ;; contains duplication. But having it expanded out like this makes it easy to
+  ;; just select a problem-set.
+
+  ;; Most of what we do here is non-lazy, but it's only done once when the app
+  ;; starts up so it means all the data is in-memory for fast run-time
+  ;; performance.
   )
 
 (defn assemble-tagged-set
+  "get all problems that have the given tag"
   [tag problems]
   (filterv (comp tag :tags) problems))
 
@@ -78,17 +87,18 @@
   [maps tag-values]
   (let [tag-set (set tag-values)
         matching-problems (filterv
-                          (fn [m]
-                            (boolean (some tag-set (:tags m))))
-                          maps)]
+                           (fn [m]
+                             (boolean (some tag-set (:tags m))))
+                           maps)]
     ;; De-duplicate based on namespace and name combination
     (vec (vals (reduce (fn [acc problem]
-                        (let [key [(:namespace problem) (:name- problem)]]
-                          (assoc acc key problem)))
-                      {}
-                      matching-problems)))))
+                         (let [key [(:namespace problem) (:name- problem)]]
+                           (assoc acc key problem)))
+                       {}
+                       matching-problems)))))
 
 (defn custom-rfn
+  "custom problem-sets are made-up of lists of tags or problem names"
   [ns-problems acc name {:keys [tags names]}]
   (let [flat-problems (flatten-problems ns-problems)
         problems (concat (filter-by-name flat-problems names)
@@ -108,17 +118,19 @@
         namespace-problems (reduce conj {} (map load-problems namespace-list))
         custom-problems (assemble-custom-problem-sets custom-problem-sets namespace-problems)
         ]
-    custom-problems
-    ;;namespace-problems
-    ))
+
+    (assoc namespace-problems "Custom Problems" custom-problems)))
 
 (comment
   (pprint (load-problems 'sherlockbench.sample-problems))
-  (aggregate-problems ['extra.classic-problems 'extra.interrobench-problems]
-                      {"My Favorites" {:names [(list "sherlockbench.sample-problems" "add & subtract")
-                                               (list "extra.interrobench-problems" "find-higher-number")]}})
+  (time (aggregate-problems ['extra.classic-problems 'extra.interrobench-problems]
+                              {"My Favorites" {:tags [:sherlockbench.sample-problems/math
+                                              :sherlockbench.classic/math]
+                                       :names ['("sherlockbench.sample-problems" "filter consonants and vowels")
+                                               '("extra.interrobench-problems" "reverse string")]}
 
-
+                       "String Manipulation" {:tags [:sherlockbench.sample-problems/string
+                                                     :extra.classic-problems/string]}}))
 
   (pprint (flatten-problems (aggregate-problems ['extra.classic-problems] [])))
   (flatten-problems (aggregate-problems ['extra.classic-problems] []))
