@@ -47,12 +47,13 @@
      (hashers/check password hashed))])
 
 (defn create-run!
-  [benchmark-version client-id run-type config run-state starttime]
+  [benchmark-version client-id run-type problem-set config run-state starttime]
   [(-> (insert-into :runs)
        (values [{:benchmark_version benchmark-version
                  :config [:cast (json/write-str config) :jsonb]
                  :client_id client-id
                  :run_type [:cast run-type :run_type_type]
+                 :problem_set problem-set
                  :run-state [:cast run-state :run_state_type]
                  :datetime_start starttime}])
        (returning :id))
@@ -260,6 +261,14 @@
    (fn [xs] (->> xs
                  (map (fn [m] (clojure.core/update m :config parse-psql-json)))
                  (map (fn [m] (clojure.core/update m :final_score parse-psql-json)))))])
+
+(defn get-run-pset
+  [run-id]
+  [(-> (select :problem_set)
+       (from :runs)
+       (where [:= :id [:cast run-id :uuid]]))
+
+   (comp :problem_set first)])
 
 (defn delete-run!
   "returns true or false"

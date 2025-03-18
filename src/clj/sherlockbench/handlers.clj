@@ -93,22 +93,21 @@
   "create a run"
   [{queryfn :queryfn
     problems :problems
-    run-types :run-types
     {:keys [exam-set]} :body}]
   ;; Validate that the exam-set is one of the allowed run types
-  (if-not (contains? (set (map (comp name :tag) run-types)) exam-set)
-    {:status 400
-     :headers {"Content-Type" "text/html"}
-     :body (str (h/html [:p.error (str "Invalid exam set: " exam-set)]))}
-    (let [subset (keyword exam-set)
-          [run-id attempts] (api/create-run queryfn problems nil "official" "pending" subset)
-          
-          ;; now render the page
-          runs (queryfn (q/list-runs))
-          table (ph/render-runs (map strip-namespace runs))
-          rendered (str (h/html table)
-                        (h/html [:p.message (str "Created run with id: " run-id)]))]
-      {:status 200
-       :headers {"Content-Type" "text/html"
-                 "HX-Trigger" "clearform"}
-       :body rendered})))
+  (let [pset-kw (keyword exam-set)]
+    (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
+      {:status 400
+       :headers {"Content-Type" "text/html"}
+       :body (str (h/html [:p.error (str "Invalid exam set: " exam-set)]))}
+      (let [[run-id attempts] (api/create-run queryfn problems nil "pending" pset-kw)
+           
+            ;; now render the page
+            runs (queryfn (q/list-runs))
+            table (ph/render-runs (map strip-namespace runs))
+            rendered (str (h/html table)
+                          (h/html [:p.message (str "Created run with id: " run-id)]))]
+        {:status 200
+         :headers {"Content-Type" "text/html"
+                   "HX-Trigger" "clearform"}
+         :body rendered}))))

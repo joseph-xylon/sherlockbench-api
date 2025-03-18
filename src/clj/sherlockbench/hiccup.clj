@@ -1,5 +1,7 @@
 (ns sherlockbench.hiccup
-    (:require [hiccup2.core :as h]))
+    (:require [hiccup2.core :as h]
+              [clojure.pprint :refer [pprint]]
+              [sherlockbench.utility :as utility]))
 
 (defn render-base
   "the basic structure of an html document. takes a title and list of elements"
@@ -55,7 +57,9 @@
     (render-base "Login" [errorprint login-form])))
 
 (defn map-to-html [m]
-  (reduce (fn [acc [key val]] (concat acc [(str key ": " val) [:br]])) [] m))
+  (if (empty? m)
+      nil
+      (reduce (fn [acc [key val]] (concat acc [(str key ": " val) [:br]])) [] m)))
 
 (defn map-to-ratio [{numerator "numerator" denominator "denominator"}]
   (str numerator "/" denominator))
@@ -112,7 +116,8 @@
                [:option {:value "default"} "Create"]
                (for [[group-name v] problems]
                  [:optgroup {:label group-name}
-                  (for [[set-id {name- :name}] v]
-                    [:option {:value (str set-id)} name-])])]]]
+                  (for [[pset-kw {name- :name}] v
+                        :let [set-id (utility/problem-set-key-to-string pset-kw)]]
+                    [:option {:value set-id} name-])])]]]
 
     (render-base "Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))

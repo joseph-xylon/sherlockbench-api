@@ -5,6 +5,7 @@
             [clojure.pprint :refer [pprint]]))
 
 (def api-url "http://0.0.0.0:3000/api/")
+;; (def api-url "http://api.sherlockbench.com/api/")
 
 (defn get-api [path]
   (let [response (client/get (str api-url path)
@@ -30,6 +31,9 @@
   (post-api "is-pending-run" {"run-id" "4681dd64-c1df-4511-9bad-d4127bd9aa1e"})
   (post-api "start-run" {"client-id" "api_test.clj"
                          "subset" "easy3"
+                         })
+  (post-api "start-run" {"client-id" "api_test.clj"
+                         "existing-run-id" ""
                          })
   (post-api "test-function" {:run-id "8918d432-e80c-491e-b5a0-a40006fa1ff7"
                              :attempt-id "01071213-ba72-4be5-9616-673ccab24428"

@@ -25,8 +25,7 @@
 (s/def ::string string?)
 (s/def ::anything any?)
 (s/def ::anything-collection (s/coll-of any?))
-;; This will be dynamically checked against the run-types from config in the handler
-(s/def ::exam-sets string?)
+(s/def ::exam-sets string?) ; this will be validated in the handler
 (s/def ::vector-of-strings (s/coll-of string? :kind vector?))
 
 (s/def ::uuid (s/and string? api/valid-uuid?))
@@ -147,7 +146,6 @@
         ["start-run"
          {:post {:handler api/start-run
                  :validation {:client-id ::string
-                              :subset ::anything
                               :existing-run-id ::anything}}}]
 
         ["test-function"

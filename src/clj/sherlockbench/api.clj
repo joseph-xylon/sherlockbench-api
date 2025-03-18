@@ -4,7 +4,8 @@
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [sherlockbench.utility :as utility]))
 
 (defn valid-uuid? [uuid]
   (try
@@ -13,26 +14,27 @@
     (catch IllegalArgumentException _ false)
     (catch NullPointerException _ false)))
 
-(defn filter-problems
-  "get the appropriate subset of problems as specified"
-  [type problems subset]
-  (let [problems' (case type 
-                      "anonymous" (filter #(:demo (:tags %)) problems)
-                      "official" problems)]
-
-    ;; if they provided a subset we subset it further
-    (if subset
-      (filter #((keyword subset) (:tags %)) problems')
-      problems')))
+(defn get-problem-set
+  [problems pset]
+  (get-in (apply merge (vals problems)) [pset :problems]))
 
 (defn create-run
   "create a run and attempts"
-  [queryfn problems client-id run-type run-state subset]
+  [queryfn problems client-id run-state pset-kw]
   (let [; get the pertinent subset of the problems
-        problems' (filter-problems run-type problems subset)
+        run-type (case run-state
+                   "pending" "official"
+                   "started" "anonymous")
+        problems' (get-problem-set problems pset-kw)
         now (java.time.LocalDateTime/now)
-        config {:subset subset}
-        run-id (queryfn (q/create-run! benchmark-version client-id run-type config run-state (when (= run-type "anonymous") now)))
+        config {}
+        run-id (queryfn (q/create-run! benchmark-version
+                                       client-id
+                                       run-type
+                                       (utility/problem-set-key-to-string pset-kw)
+                                       config
+                                       run-state
+                                       (when (= run-type "anonymous") now)))
         attempts (doall
                   (for [p problems'     ; 1 attempt per problem
                         :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
@@ -51,10 +53,11 @@
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
+  ;; TODO I'm pretty sure this is broken
   [{queryfn :queryfn
     problems :problems
     {:keys [client-id subset]} :body}]
-  (let [[run-id attempts] (create-run queryfn problems client-id "anonymous" "started" subset)]
+  (let [[run-id attempts] (create-run queryfn problems client-id "started" subset)]
 
     {:status 200
      :headers {"Content-Type" "application/json"
@@ -63,6 +66,15 @@
             :run-type "anonymous"
             :benchmark-version benchmark-version
             :attempts attempts}}))
+
+(defn get-problem-by-name
+  [problems fn-name]
+  (first (filter #(= fn-name (:name- %)) problems)))
+
+(defn problems-by-run-id
+  [queryfn problems run-id]
+  (let [pset-kw (keyword (queryfn (q/get-run-pset run-id)))]
+    (get-in (apply merge (vals problems)) [pset-kw :problems])))
 
 (defn start-competition-run
   "In this one we will use an pre-existing run-id.
@@ -78,13 +90,11 @@
      :body {:error "this run has already been started"}}
 
     (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
+          problems' (problems-by-run-id queryfn problems existing-run-id)
           ;; map over attempts, replacing :function_name with fn args
           attempts' (for [{:keys [id function_name test_limit]} attempts]
                       {:attempt-id id
-                       :arg-spec (->> problems
-                                     (filter #(= (:name- %) function_name))
-                                     first
-                                     :args)
+                       :arg-spec (:args (get-problem-by-name problems' function_name))
                        :test-limit test_limit
                        :attempts-remaining test_limit})]
 
@@ -134,10 +144,6 @@
                  "Access-Control-Allow-Origin" "*"}
        :body {:error "your attempt-id doesn't match your run-id"}})))
 
-(defn get-problem-by-name
-  [problems fn-name]
-  (first (filter #(= fn-name (:name- %)) problems)))
-
 (defn wrap-validate-args
   "a middleware to validate the args of a test function"
   [handler]
@@ -145,7 +151,8 @@
         problems :problems
         {:keys [run-id attempt-id args]} :body
         fn-name :fn-name :as request}]
-    (let [this-problem (get-problem-by-name problems fn-name)
+    (let [problems' (problems-by-run-id queryfn problems run-id)
+          this-problem (get-problem-by-name problems' fn-name)
           {:keys [valid? coerced errors]} (validate-and-coerce (:args this-problem) args)]
       (if valid?
         ;; add the validated args and continue
@@ -174,7 +181,7 @@
     problems :problems
     validated-args :validated-args
     fn-name :fn-name
-    {:keys [attempt-id]} :body}]
+    {:keys [run-id attempt-id]} :body}]
 
   (let [{:keys [fn_calls test_limit]} (queryfn (q/increment-fn-calls attempt-id))
         started-verifications (queryfn (q/started-verifications? attempt-id))
@@ -192,7 +199,8 @@
        :body {:error "you cannot test the function after you start the validations"}}
       
       :else
-      (let [problem (get-problem-by-name problems fn-name)
+      (let [problems' (problems-by-run-id queryfn problems run-id)
+            problem (get-problem-by-name problems' fn-name)
             output (apply-fn problem validated-args)]
 
         {:status 200
@@ -250,9 +258,10 @@
   [{queryfn :queryfn
     fn-name :fn-name
     problems :problems
-    {:keys [attempt-id prediction]} :body}]
+    {:keys [run-id attempt-id prediction]} :body}]
 
-  (let [problem (get-problem-by-name problems fn-name)
+  (let [problems' (problems-by-run-id queryfn problems run-id)
+        problem (get-problem-by-name problems' fn-name)
         output-type (:output-type problem)
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
