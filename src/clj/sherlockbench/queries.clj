@@ -10,7 +10,7 @@
             [buddy.hashers :as hashers]
             [clojure.data.json :as json]
             [clojure.set :as set]
-            [sherlockbench.config :refer [default-test-limit]]))
+            [sherlockbench.constants :refer [default-test-limit]]))
 
 (defn clean-ns [m]
   (clojure.core/into {} (map (fn [[k v]] [(keyword (name k)) v]) m)))

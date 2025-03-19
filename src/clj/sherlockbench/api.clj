@@ -1,5 +1,5 @@
 (ns sherlockbench.api
-  (:require [sherlockbench.config :refer [benchmark-version default-test-limit]]
+  (:require [sherlockbench.constants :refer [benchmark-version default-test-limit]]
             [sherlockbench.queries :as q]
             [sherlockbench.validate-fn-args :refer [validate-and-coerce]]
             [clojure.data.json :as json]
