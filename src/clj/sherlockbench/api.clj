@@ -324,3 +324,19 @@
             :percent score-percent
             :problem-names problem-names}}
     ))
+
+(defn list-problem-sets
+  "List available problem sets, providing only the category names, problem-set ids, and names.
+   Does not expose the actual problems."
+  [{problems :problems}]
+  (let [problem-sets-by-category 
+        (for [[category-name category-sets] problems]
+          [category-name
+           (for [[problem-set-key {:keys [name]}] category-sets]
+             {:id (util/problem-set-key-to-string problem-set-key)
+              :name name})])]
+    
+    {:status 200
+     :headers {"Content-Type" "application/json"
+               "Access-Control-Allow-Origin" "*"}
+     :body {:problem-sets (into {} problem-sets-by-category)}}))

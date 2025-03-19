@@ -139,6 +139,9 @@
        ["/api/"
         {:middleware [output-to-json
                       wrap-problems]}
+        ["problem-sets"
+         {:get {:handler api/list-problem-sets}}]
+         
         ["is-pending-run"
          {:post {:handler api/pending-run?
                  :validation {:run-id ::uuid}}}]

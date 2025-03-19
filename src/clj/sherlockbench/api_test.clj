@@ -28,6 +28,7 @@
     (pprint parsed-body)))
 
 (comment
+  (get-api "problem-sets") 
   (post-api "is-pending-run" {"run-id" "4681dd64-c1df-4511-9bad-d4127bd9aa1e"})
   (post-api "start-run" {"client-id" "api_test.clj"
                          "subset" "easy3"
