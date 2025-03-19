@@ -1,7 +1,7 @@
 (ns sherlockbench.hiccup
     (:require [hiccup2.core :as h]
               [clojure.pprint :refer [pprint]]
-              [sherlockbench.utility :as utility]))
+              [sherlockbench.utility :as util]))
 
 (defn render-base
   "the basic structure of an html document. takes a title and list of elements"
@@ -117,7 +117,7 @@
                (for [[group-name v] problems]
                  [:optgroup {:label group-name}
                   (for [[pset-kw {name- :name}] v
-                        :let [set-id (utility/problem-set-key-to-string pset-kw)]]
+                        :let [set-id (util/problem-set-key-to-string pset-kw)]]
                     [:option {:value set-id} name-])])]]]
 
     (render-base "Runs" [table] :form form :scripts ["/web/public/cljs/shared.js" "/web/public/cljs/runs-list.js"])))

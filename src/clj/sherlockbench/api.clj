@@ -5,7 +5,7 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [clojure.pprint :refer [pprint]]
-            [sherlockbench.utility :as utility]))
+            [sherlockbench.utility :as util]))
 
 (defn valid-uuid? [uuid]
   (try
@@ -31,7 +31,7 @@
         run-id (queryfn (q/create-run! benchmark-version
                                        client-id
                                        run-type
-                                       (utility/problem-set-key-to-string pset-kw)
+                                       (util/problem-set-key-to-string pset-kw)
                                        config
                                        run-state
                                        (when (= run-type "anonymous") now)))
@@ -56,16 +56,23 @@
   ;; TODO I'm pretty sure this is broken
   [{queryfn :queryfn
     problems :problems
-    {:keys [client-id subset]} :body}]
-  (let [[run-id attempts] (create-run queryfn problems client-id "started" subset)]
-
-    {:status 200
-     :headers {"Content-Type" "application/json"
+    {:keys [client-id problem-set]} :body}]
+  (let [pset-kw (keyword problem-set)]
+    (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
+      {:status 400
+       :headers {"Content-Type" "application/json"
                "Access-Control-Allow-Origin" "*"}
-     :body {:run-id run-id
-            :run-type "anonymous"
-            :benchmark-version benchmark-version
-            :attempts attempts}}))
+       :body {:error (str "Invalid exam set: " problem-set)}}
+      
+      (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw)]
+
+        {:status 200
+         :headers {"Content-Type" "application/json"
+                   "Access-Control-Allow-Origin" "*"}
+         :body {:run-id run-id
+                :run-type "anonymous"
+                :benchmark-version benchmark-version
+                :attempts attempts}}))))
 
 (defn get-problem-by-name
   [problems fn-name]
@@ -108,10 +115,10 @@
 
 (defn start-run
   "check if there is a run-id specified and decide which fn to call"
-  [{{:keys [existing-run-id]} :body :as request}]
-  (if (valid-uuid? existing-run-id)
-    (start-competition-run request)
-    (start-anonymous-run request)))
+  [{{:keys [existing-run-id problem-set]} :body :as request}]
+  (cond
+    (valid-uuid? existing-run-id) (start-competition-run request)
+    (util/not-empty-string? problem-set) (start-anonymous-run request)))
 
 (defn wrap-check-run
   "did they give us a valid run id?"

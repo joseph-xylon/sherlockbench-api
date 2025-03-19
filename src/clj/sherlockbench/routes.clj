@@ -146,7 +146,9 @@
         ["start-run"
          {:post {:handler api/start-run
                  :validation {:client-id ::string
-                              :existing-run-id ::anything}}}]
+                              :existing-run-id ::anything
+                              :problem-set ::anything
+                              }}}]
 
         ["test-function"
          {:post {:handler api/test-function
