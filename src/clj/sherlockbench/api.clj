@@ -53,26 +53,31 @@
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
-  ;; TODO I'm pretty sure this is broken
   [{queryfn :queryfn
     problems :problems
+    anonymous-runs-allowed :anonymous-runs-allowed
     {:keys [client-id problem-set]} :body}]
-  (let [pset-kw (keyword problem-set)]
-    (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
-      {:status 400
-       :headers {"Content-Type" "application/json"
+  (if-not anonymous-runs-allowed
+    {:status 403
+     :headers {"Content-Type" "application/json"
                "Access-Control-Allow-Origin" "*"}
-       :body {:error (str "Invalid exam set: " problem-set)}}
-      
-      (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw)]
-
-        {:status 200
+     :body {:error "Anonymous runs are disabled. Please use an existing run ID."}}
+    
+    (let [pset-kw (keyword problem-set)]
+      (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
+        {:status 400
          :headers {"Content-Type" "application/json"
-                   "Access-Control-Allow-Origin" "*"}
-         :body {:run-id run-id
-                :run-type "anonymous"
-                :benchmark-version benchmark-version
-                :attempts attempts}}))))
+                 "Access-Control-Allow-Origin" "*"}
+         :body {:error (str "Invalid exam set: " problem-set)}}
+        
+        (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw)]
+          {:status 200
+           :headers {"Content-Type" "application/json"
+                     "Access-Control-Allow-Origin" "*"}
+           :body {:run-id run-id
+                  :run-type "anonymous"
+                  :benchmark-version benchmark-version
+                  :attempts attempts}})))))
 
 (defn get-problem-by-name
   [problems fn-name]
@@ -118,7 +123,11 @@
   [{{:keys [existing-run-id problem-set]} :body :as request}]
   (cond
     (valid-uuid? existing-run-id) (start-competition-run request)
-    (util/not-empty-string? problem-set) (start-anonymous-run request)))
+    (util/not-empty-string? problem-set) (start-anonymous-run request)
+    :else {:status 400
+           :headers {"Content-Type" "application/json"
+                    "Access-Control-Allow-Origin" "*"}
+           :body {:error "Either an existing run ID or a problem set must be specified"}}))
 
 (defn wrap-check-run
   "did they give us a valid run id?"
@@ -328,7 +337,7 @@
 (defn list-problem-sets
   "List available problem sets, providing only the category names, problem-set ids, and names.
    Does not expose the actual problems."
-  [{problems :problems}]
+  [{problems :problems anonymous-runs-allowed :anonymous-runs-allowed}]
   (let [problem-sets-by-category 
         (for [[category-name category-sets] problems]
           [category-name
@@ -336,7 +345,12 @@
              {:id (util/problem-set-key-to-string problem-set-key)
               :name name})])]
     
-    {:status 200
-     :headers {"Content-Type" "application/json"
-               "Access-Control-Allow-Origin" "*"}
-     :body {:problem-sets (into {} problem-sets-by-category)}}))
+    (if anonymous-runs-allowed
+      {:status 200
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
+       :body {:problem-sets (into {} problem-sets-by-category)}}
+      {:status 403
+       :headers {"Content-Type" "application/json"
+                 "Access-Control-Allow-Origin" "*"}
+       :body {:error "Anonymous runs are disabled. Please use an existing run ID."}})))

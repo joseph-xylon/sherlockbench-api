@@ -101,13 +101,15 @@
   "reitit with format negotiation and input & output coercion"
   [queryfn config session-store problems]
   ;; we define a middleware that includes our query builder
-  (let [wrap-query-builder (fn [handler]
+  (let [allow-anonymous-runs (get config :allow-anonymous-runs true)
+        wrap-query-builder (fn [handler]
                              (fn [request]
                                (handler (assoc request :queryfn queryfn))))
         wrap-problems (fn [handler]
                         (fn [request]
                           (handler (assoc request
-                                         :problems problems))))]
+                                         :problems problems
+                                         :anonymous-runs-allowed allow-anonymous-runs))))]
 
     (ring/ring-handler
      (ring/router
