@@ -22,5 +22,5 @@
 
 (defn setup-form-handlers
   []
-  ;; html produces this event https://htmx.org/headers/hx-trigger/
+  ;; htmx produces this event https://htmx.org/headers/hx-trigger/
   (.addEventListener js/document.body "clearform" clearform))
