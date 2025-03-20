@@ -7,6 +7,17 @@
             [clojure.pprint :refer [pprint]]
             [sherlockbench.utility :as util]))
 
+;; Common response helpers
+(defn api-response
+  "Create a standardized API response"
+  ([status body]
+   {:status status
+    :headers {"Content-Type" "application/json"
+              "Access-Control-Allow-Origin" "*"}
+    :body body})
+  ([body]
+   (api-response 200 body)))
+
 (defn valid-uuid? [uuid]
   (try
     (java.util.UUID/fromString uuid)
@@ -14,9 +25,22 @@
     (catch IllegalArgumentException _ false)
     (catch NullPointerException _ false)))
 
+;; Problem lookup helpers
 (defn get-problem-set
+  "Get a set of problems by problem set keyword"
   [problems pset]
   (get-in (apply merge (vals problems)) [pset :problems]))
+
+(defn get-problem-by-name
+  "Find a problem in a problem list by name"
+  [problems fn-name]
+  (first (filter #(= fn-name (:name- %)) problems)))
+
+(defn problems-by-run-id
+  "Get problems associated with a run ID"
+  [queryfn problems run-id]
+  (let [pset-kw (keyword (queryfn (q/get-run-pset run-id)))]
+    (get-problem-set problems pset-kw)))
 
 (defn create-run
   "create a run and attempts"
@@ -46,10 +70,7 @@
 
 (defn pending-run? [{queryfn :queryfn
                      {:keys [run-id]} :body}]
-  {:status 200
-   :headers {"Content-Type" "application/json"
-             "Access-Control-Allow-Origin" "*"}
-   :body {:response (queryfn (q/pending-run? run-id))}})
+  (api-response {:response (queryfn (q/pending-run? run-id))}))
 
 (defn start-anonymous-run
   "initialize database entries for an anonymous run"
@@ -58,35 +79,23 @@
     anonymous-runs-allowed :anonymous-runs-allowed
     {:keys [client-id problem-set]} :body}]
   (if-not anonymous-runs-allowed
-    {:status 403
-     :headers {"Content-Type" "application/json"
-               "Access-Control-Allow-Origin" "*"}
-     :body {:error "Anonymous runs are disabled. Please use an existing run ID."}}
+    (api-response 403 {:error "Anonymous runs are disabled. Please use an existing run ID."})
     
     (let [pset-kw (keyword problem-set)]
       (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
-        {:status 400
-         :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-         :body {:error (str "Invalid exam set: " problem-set)}}
+        (api-response 400 {:error (str "Invalid exam set: " problem-set)})
         
         (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw)]
-          {:status 200
-           :headers {"Content-Type" "application/json"
-                     "Access-Control-Allow-Origin" "*"}
-           :body {:run-id run-id
-                  :run-type "anonymous"
-                  :benchmark-version benchmark-version
-                  :attempts attempts}})))))
+          (api-response {:run-id run-id
+                         :run-type "anonymous"
+                         :benchmark-version benchmark-version
+                         :attempts attempts}))))))
 
 (defn get-problem-by-name
+  "Find a problem in a problem list by name"
   [problems fn-name]
   (first (filter #(= fn-name (:name- %)) problems)))
 
-(defn problems-by-run-id
-  [queryfn problems run-id]
-  (let [pset-kw (keyword (queryfn (q/get-run-pset run-id)))]
-    (get-in (apply merge (vals problems)) [pset-kw :problems])))
 
 (defn start-competition-run
   "In this one we will use an pre-existing run-id.
@@ -96,10 +105,7 @@
     problems :problems
     {:keys [existing-run-id client-id]} :body}]
   (if (queryfn (q/started? existing-run-id))
-    {:status 412
-     :headers {"Content-Type" "application/json"
-               "Access-Control-Allow-Origin" "*"}
-     :body {:error "this run has already been started"}}
+    (api-response 412 {:error "this run has already been started"})
 
     (let [attempts (queryfn (q/start-run! existing-run-id client-id)) ; list of maps 
           problems' (problems-by-run-id queryfn problems existing-run-id)
@@ -110,13 +116,10 @@
                        :test-limit test_limit
                        :attempts-remaining test_limit})]
 
-      {:status 200
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:run-id existing-run-id
-              :run-type "competition"
-              :benchmark-version benchmark-version
-              :attempts attempts'}})))
+      (api-response {:run-id existing-run-id
+                     :run-type "competition"
+                     :benchmark-version benchmark-version
+                     :attempts attempts'}))))
 
 (defn start-run
   "check if there is a run-id specified and decide which fn to call"
@@ -124,10 +127,7 @@
   (cond
     (valid-uuid? existing-run-id) (start-competition-run request)
     (util/not-empty-string? problem-set) (start-anonymous-run request)
-    :else {:status 400
-           :headers {"Content-Type" "application/json"
-                    "Access-Control-Allow-Origin" "*"}
-           :body {:error "Either an existing run ID or a problem set must be specified"}}))
+    :else (api-response 400 {:error "Either an existing run ID or a problem set must be specified"})))
 
 (defn wrap-check-run
   "did they give us a valid run id?"
@@ -139,10 +139,7 @@
       (handler request)
 
       ;; break as they have an expired session
-      {:status 412
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error "your run appears to be invalid or expired"}})))
+      (api-response 412 {:error "your run appears to be invalid or expired"}))))
 
 (defn wrap-check-attempt
   "did they give us a valid attempt id?"
@@ -155,10 +152,7 @@
         (handler (assoc request :fn-name fn-name)))
 
       ;; break as they have an expired session
-      {:status 412
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error "your attempt-id doesn't match your run-id"}})))
+      (api-response 412 {:error "your attempt-id doesn't match your run-id"}))))
 
 (defn wrap-validate-args
   "a middleware to validate the args of a test function"
@@ -179,11 +173,7 @@
         ;; break as these args are invalid
         (do
           (log/info errors)
-
-          {:status 400
-           :headers {"Content-Type" "application/json"
-                     "Access-Control-Allow-Origin" "*"}
-           :body {:error "your arguments don't comply with the schema"}})))))
+          (api-response 400 {:error "your arguments don't comply with the schema"}))))))
 
 (defn apply-fn
   [problem validated-args]
@@ -204,27 +194,19 @@
         remaining-attempts (- test_limit fn_calls)]
     (cond
       (> fn_calls test_limit)
-      {:status 400
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error (format "you have reached the test limit of %d for this problem" test_limit)}}
+      (api-response 400 {:error (format "you have reached the test limit of %d for this problem" test_limit)})
+      
       (true? started-verifications)
-      {:status 400
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error "you cannot test the function after you start the validations"}}
+      (api-response 400 {:error "you cannot test the function after you start the validations"})
       
       :else
       (let [problems' (problems-by-run-id queryfn problems run-id)
             problem (get-problem-by-name problems' fn-name)
             output (apply-fn problem validated-args)]
 
-        {:status 200
-         :headers {"Content-Type" "application/json"
-                   "Access-Control-Allow-Origin" "*"}
-         :body {:output output
-                :attempts_remaining remaining-attempts
-                :test_limit test_limit}}))))
+        (api-response {:output output
+                       :attempts_remaining remaining-attempts
+                       :test_limit test_limit})))))
 
 (defn wrap-record-started [handler]
   (fn [{queryfn :queryfn
@@ -253,17 +235,11 @@
         problems' (problems-by-run-id queryfn problems run-id)
         output-type (:output-type (get-problem-by-name problems' fn-name))]
     (if (nil? next-verification)
-      {:status 200
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:status "done"
-              :next-verification nil}}
-      {:status 200
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:status "success"
-              :next-verification next-verification
-              :output-type output-type}})))
+      (api-response {:status "done"
+                     :next-verification nil})
+      (api-response {:status "success"
+                     :next-verification next-verification
+                     :output-type output-type}))))
 
 (defn =normalized
   "normalize everything to a string for comparrison"
@@ -282,38 +258,25 @@
         output-type (:output-type problem)
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
-      {:status 400
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error "you're done"}}
+      (api-response 400 {:error "you're done"})
       (let [output (apply-fn problem this-verification)]
         (if (=normalized prediction output)
           (if remaining-verifications
             ;; success with more
-            {:status 200
-             :headers {"Content-Type" "application/json"
-                       "Access-Control-Allow-Origin" "*"}
-             :body {:status "correct"
-                    :next-verification (first remaining-verifications)
-                    :output-type output-type}}
+            (api-response {:status "correct"
+                           :next-verification (first remaining-verifications)
+                           :output-type output-type})
 
             ;; all done
             (do
               (queryfn (q/attempt-success! attempt-id))
-              {:status 200
-               :headers {"Content-Type" "application/json"
-                         "Access-Control-Allow-Origin" "*"}
-               :body {:status "done"
-                      :next-verification nil}})
-            )
+              (api-response {:status "done"
+                             :next-verification nil})))
           ;; failure
           (do
             (queryfn (q/attempt-failure! attempt-id))
-            {:status 200
-             :headers {"Content-Type" "application/json"
-                       "Access-Control-Allow-Origin" "*"}
-             :body {:status "wrong"
-                    :next-verification nil}}))))))
+            (api-response {:status "wrong"
+                           :next-verification nil})))))))
 
 (defn complete-run
   "They tell us they have completed the run."
@@ -326,14 +289,10 @@
         problem-names (queryfn (q/get-names-and-ids run-id))]
     (queryfn (q/save-results! run-id total-run-time final-score score-percent))
     
-    {:status 200
-     :headers {"Content-Type" "application/json"
-               "Access-Control-Allow-Origin" "*"}
-     :body {:run-time (str total-run-time)
-            :score final-score
-            :percent score-percent
-            :problem-names problem-names}}
-    ))
+    (api-response {:run-time (str total-run-time)
+                   :score final-score
+                   :percent score-percent
+                   :problem-names problem-names})))
 
 (defn list-problem-sets
   "List available problem sets, providing only the category names, problem-set ids, and names.
@@ -347,11 +306,5 @@
               :name name})])]
     
     (if anonymous-runs-allowed
-      {:status 200
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:problem-sets (into {} problem-sets-by-category)}}
-      {:status 403
-       :headers {"Content-Type" "application/json"
-                 "Access-Control-Allow-Origin" "*"}
-       :body {:error "Anonymous runs are disabled. Please use an existing run ID."}})))
+      (api-response {:problem-sets (into {} problem-sets-by-category)})
+      (api-response 403 {:error "Anonymous runs are disabled. Please use an existing run ID."}))))
