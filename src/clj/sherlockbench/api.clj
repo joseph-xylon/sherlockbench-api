@@ -245,12 +245,13 @@
   [{queryfn :queryfn
     fn-name :fn-name
     problems :problems
-    {:keys [attempt-id]} :body}]
+    {:keys [run-id attempt-id]} :body}]
 
   (queryfn (q/started-verifications! attempt-id)) ; record we've started
 
   (let [next-verification (first (queryfn (q/get-verifications attempt-id)))
-        output-type (:output-type (get-problem-by-name problems fn-name))]
+        problems' (problems-by-run-id queryfn problems run-id)
+        output-type (:output-type (get-problem-by-name problems' fn-name))]
     (if (nil? next-verification)
       {:status 200
        :headers {"Content-Type" "application/json"

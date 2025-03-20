@@ -31,16 +31,15 @@
   (get-api "problem-sets") 
   (post-api "is-pending-run" {"run-id" "4681dd64-c1df-4511-9bad-d4127bd9aa1e"})
   (post-api "start-run" {"client-id" "api_test.clj"
-                         "subset" "easy3"
-                         })
+                         "problem-set" "sherlockbench.sample-problems/easy3"})
   (post-api "start-run" {"client-id" "api_test.clj"
                          "existing-run-id" ""
                          })
-  (post-api "test-function" {:run-id "8918d432-e80c-491e-b5a0-a40006fa1ff7"
-                             :attempt-id "01071213-ba72-4be5-9616-673ccab24428"
+  (post-api "test-function" {:run-id "eb55663c-ac29-46c5-8474-857fbbdf4cf0"
+                             :attempt-id "21cf991e-7ae8-4061-ab64-9602fde51815"
                              :args [9 4 3]})
-  (post-api "next-verification" {:run-id "8918d432-e80c-491e-b5a0-a40006fa1ff7"
-                                 :attempt-id "01071213-ba72-4be5-9616-673ccab24428"})
+  (post-api "next-verification" {:run-id "eb55663c-ac29-46c5-8474-857fbbdf4cf0"
+                                 :attempt-id "21cf991e-7ae8-4061-ab64-9602fde51815"})
   (post-api "attempt-verification" {:run-id "8918d432-e80c-491e-b5a0-a40006fa1ff7"
                                     :attempt-id "01071213-ba72-4be5-9616-673ccab24428"
                                     :prediction 5})
