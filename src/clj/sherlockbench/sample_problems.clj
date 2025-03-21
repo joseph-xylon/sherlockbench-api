@@ -6,7 +6,9 @@
 (def tag-names
   {::all "All"
    ::easy3 "3 Easy Problems"
-   ::math "Math"})
+   ::math "Math"
+   ::logic "Logic"
+   ::string "String"})
 
 (def problems
   [
@@ -33,7 +35,7 @@
     :verifications [[23] [4] [13] [25]]
     :output-type "boolean"
     :test-limit 20
-    :tags #{::all ::easy3 ::math}}
+    :tags #{::all ::easy3 ::logic}}
 
    {:name- "modulus 3 to fruit"
     :args ["integer"]
@@ -63,7 +65,7 @@
     :verifications [["vector"], ["ocean"], ["strength"]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::demo ::string}}
 
    {:name- "add with toggle sign"
     :args ["integer" "integer" "boolean"]
@@ -75,7 +77,7 @@
     :verifications [[4, 5, false],[7, 3, false], [10, -2, true]]
     :output-type "integer"
     :test-limit 20
-    :tags #{::all ::math}}
+    :tags #{::all ::logic}}
 
    {:name- "concat nth char"
     :args ["string" "string" "integer"]
@@ -106,7 +108,7 @@
     :verifications [["paradise"], ["sunshine"], ["elephant"]]
     :output-type "string"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::demo ::string}}
 
    {:name- "interleave characters"
     :args ["string" "string"]
@@ -118,6 +120,6 @@
     :verifications [["abc", "123"], ["clojure", "123"], ["short", "longer"]]
     :output-type "string"
     :test-limit 20
-    :tags #{::all ::demo}}
+    :tags #{::all ::demo ::string}}
 
    ])
