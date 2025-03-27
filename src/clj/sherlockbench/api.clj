@@ -11,6 +11,8 @@
 (defn api-response
   "Create a standardized API response"
   ([status body]
+   (when-let [error (:error body)]
+     (prn error))
    {:status status
     :headers {"Content-Type" "application/json"
               "Access-Control-Allow-Origin" "*"}
