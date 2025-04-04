@@ -46,12 +46,12 @@
 
 (defn create-run
   "create a run and attempts"
-  [queryfn problems client-id run-state pset-kw]
+  [queryfn problems client-id run-state pset-kw attempts-per-problem]
   (let [; get the pertinent subset of the problems
         run-type (case run-state
                    "pending" "official"
                    "started" "anonymous")
-        problems' (get-problem-set problems pset-kw)
+        problems' (flatten (repeat attempts-per-problem (get-problem-set problems pset-kw)))
         now (java.time.LocalDateTime/now)
         config {}
         run-id (queryfn (q/create-run! benchmark-version
@@ -62,7 +62,7 @@
                                        run-state
                                        (when (= run-type "anonymous") now)))
         attempts (doall
-                  (for [p problems'     ; 1 attempt per problem
+                  (for [p problems'    ; 1 attempt per problem
                         :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
                     {:attempt-id id
                      :arg-spec (:args p)
@@ -79,15 +79,18 @@
   [{queryfn :queryfn
     problems :problems
     anonymous-runs-allowed :anonymous-runs-allowed
-    {:keys [client-id problem-set]} :body}]
+    {:keys [client-id problem-set attempts-per-problem]} :body}]
   (if-not anonymous-runs-allowed
     (api-response 403 {:error "Anonymous runs are disabled. Please use an existing run ID."})
     
-    (let [pset-kw (keyword problem-set)]
+    (let [pset-kw (keyword problem-set)
+          attempts-count (if (and attempts-per-problem (integer? attempts-per-problem))
+                           attempts-per-problem
+                           1)]
       (if-not (contains? (set (apply concat (map keys (vals problems)))) pset-kw)
         (api-response 400 {:error (str "Invalid exam set: " problem-set)})
         
-        (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw)]
+        (let [[run-id attempts] (create-run queryfn problems client-id "started" pset-kw attempts-count)]
           (api-response {:run-id run-id
                          :run-type "anonymous"
                          :benchmark-version benchmark-version

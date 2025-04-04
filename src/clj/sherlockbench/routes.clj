@@ -27,6 +27,7 @@
 (s/def ::anything-collection (s/coll-of any?))
 (s/def ::exam-sets string?) ; this will be validated in the handler
 (s/def ::vector-of-strings (s/coll-of string? :kind vector?))
+(s/def ::optional-int (s/nilable int?))
 
 (s/def ::uuid (s/and string? api/valid-uuid?))
 
@@ -153,7 +154,7 @@
                  :validation {:client-id ::string
                               :existing-run-id ::anything
                               :problem-set ::anything
-                              }}}]
+                              :attempts-per-problem ::optional-int}}}]
 
         ["test-function"
          {:post {:handler api/test-function
