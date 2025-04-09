@@ -309,7 +309,7 @@
            (for [[problem-set-key {:keys [name]}] category-sets]
              {:id (util/problem-set-key-to-string problem-set-key)
               :name name})])]
-    
+
     (if anonymous-runs-allowed
       (api-response {:problem-sets (into {} problem-sets-by-category)})
       (api-response 403 {:error "Anonymous runs are disabled. Please use an existing run ID."}))))
