@@ -277,3 +277,14 @@
        (where [:= :id [:cast run-id :uuid]]))
 
    #(not= 0 (:next.jdbc/update-count (first %)))])
+
+(defn cleanup-old-runs!
+  "Deletes incomplete runs older than 1 week.
+   Returns the number of runs deleted."
+  []
+  [(-> (delete-from :runs)
+       (where [:and
+               [:!= :run_state [:cast "complete" :run_state_type]]
+               [:< :created_at [:- [:now] [:interval "1 week"]]]]))
+
+   #(:next.jdbc/update-count (first %))])

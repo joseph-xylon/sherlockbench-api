@@ -92,7 +92,8 @@
                "Please provide a single argument:"
                "- run-app: this will run the application"
                "- migrate: this will setup or update the database tables"
-               "- rollback: revert the latest db migration"]]
+               "- rollback: revert the latest db migration"
+               "- cleanup: delete incomplete runs older than 1 week"]]
     (println (reduce #(str %1 "\n" %2) infos))))
 
 (defn start-system
@@ -113,6 +114,11 @@
                  (migratus/rollback (:migratus/config system)))
     "add-user" (let [system (start-system :db)]
                  (add-user (:sherlockbench/queryfn system)))
+    "cleanup"  (let [system (start-system :db)
+                     queryfn (:sherlockbench/queryfn system)
+                     count (queryfn (queries/cleanup-old-runs!))]
+                 (println (str "Deleted " count " incomplete runs older than 1 week"))
+                 (halt-system system))
     (print-usage)))
 
 (comment
