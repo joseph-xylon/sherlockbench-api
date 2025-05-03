@@ -1,0 +1,1 @@
+ALTER TYPE run_type_type ADD VALUE 'developer' AFTER 'official';
