@@ -91,6 +91,7 @@
         (handler request')
         (do
           (prn "failed validation")
+          (prn body-coerced)
           {:status 400
            :headers {"Content-Type" "application/json"
                      "Access-Control-Allow-Origin" "*"}
@@ -190,7 +191,7 @@
                  :validation {:run-id ::uuid}}}]
 
         ;; developer operations. these mark the run_type as developer
-        ["/developer/"
+        ["developer/"
          {:middleware [output-to-json
                        wrap-problems
                        api/wrap-set-developer]}
