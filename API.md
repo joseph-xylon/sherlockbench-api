@@ -241,6 +241,35 @@ Submit verification attempt.
 4. Attempt verifications for each problem
 5. Complete the run to get final score
 
+### Developer Operations
+
+Developer operations convert a run from "official" or "anonymous" to "developer" type, as they could be used to circumvent normal challenge rules.
+
+#### `POST /api/developer/reset-attempt`
+
+Resets an attempt to its initial state, allowing retries.
+
+**Request Body**
+```json
+{
+  "run-id": "<uuid>",
+  "attempt-id": "<uuid>"
+}
+```
+
+**Response (200)**
+```json
+{
+  "status": "success",
+  "message": "Attempt has been reset"
+}
+```
+
+**Errors**
+- 412: Invalid run or attempt ID
+
+**Note**: Using this endpoint will change the run's type to "developer", marking it as non-official.
+
 ## Error Codes
 
 - 200: Success

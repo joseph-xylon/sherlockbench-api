@@ -91,6 +91,7 @@
         (handler request')
         (do
           (prn "failed validation")
+          (prn body-coerced)
           {:status 400
            :headers {"Content-Type" "application/json"
                      "Access-Control-Allow-Origin" "*"}
@@ -187,7 +188,19 @@
         ["complete-run"
          {:post {:handler api/complete-run
                  :middleware [api/wrap-check-run]
-                 :validation {:run-id ::uuid}}}]]]
+                 :validation {:run-id ::uuid}}}]
+
+        ;; developer operations. these mark the run_type as developer
+        ["developer/"
+         {:middleware [output-to-json
+                       wrap-problems
+                       api/wrap-set-developer]}
+         ["reset-attempt"
+          {:post {:handler api/reset-attempt
+                  :middleware [api/wrap-check-run
+                               api/wrap-check-attempt]
+                  :validation {:run-id ::uuid
+                               :attempt-id ::uuid}}}]]]]
 
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion

@@ -288,3 +288,24 @@
                [:< :created_at [:- [:now] [:interval "1 week"]]]]))
 
    #(:next.jdbc/update-count (first %))])
+
+(defn set-run-type-to-developer!
+  "Update the run_type to 'developer' for a given run ID."
+  [run-id]
+  [(-> (update :runs)
+       (set {:run_type [:cast "developer" :run_type_type]})
+       (where [:= :id [:cast run-id :uuid]]))
+   
+   identity])
+
+(defn reset-attempt!
+  "Reset all mutable fields for an attempt to their initial state."
+  [attempt-id original-verifications]
+  [(-> (update :attempts)
+       (set {:verifications [:cast (json/write-str original-verifications) :jsonb]
+             :result_value nil
+             :fn_calls 0
+             :started_verifications false})
+       (where [:= :id [:cast attempt-id :uuid]]))
+   
+   identity])

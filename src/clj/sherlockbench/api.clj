@@ -313,3 +313,34 @@
     (if anonymous-runs-allowed
       (api-response {:problem-sets (into {} problem-sets-by-category)})
       (api-response 403 {:error "Anonymous runs are disabled. Please use an existing run ID."}))))
+
+(defn wrap-set-developer
+  "Middleware that marks a run as developer type, indicating it's no longer
+   an official benchmark run because developer operations were used."
+  [handler]
+  (fn [{queryfn :queryfn
+        {:keys [run-id]} :body :as request}]
+    ;; Update run_type to 'developer'
+    (queryfn (q/set-run-type-to-developer! run-id))
+    
+    ;; Continue with the handler
+    (handler request)))
+
+(defn reset-attempt
+  "Reset all mutable fields for an attempt to their initial state.
+   This allows the user to retry an attempt, but marks the run as developer type."
+  [{queryfn :queryfn
+    problems :problems
+    {:keys [run-id attempt-id]} :body}]
+  
+  ;; Get the original verifications from the problem definition
+  (let [fn-name (queryfn (q/get-fn-name attempt-id))
+        problems' (problems-by-run-id queryfn problems run-id)
+        problem (get-problem-by-name problems' fn-name)
+        original-verifications (:verifications problem)]
+    
+    ;; Reset all mutable fields for the attempt
+    (queryfn (q/reset-attempt! attempt-id original-verifications))
+    
+    (api-response {:status "success"
+                   :message "Attempt has been reset"})))
