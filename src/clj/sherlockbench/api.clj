@@ -344,3 +344,10 @@
     
     (api-response {:status "success"
                    :message "Attempt has been reset"})))
+
+(defn get-problem-names
+  "Get the names of all problems for a given run."
+  [{queryfn :queryfn
+    {:keys [run-id]} :body}]
+  (let [problem-names (queryfn (q/get-names-and-ids run-id))]
+    (api-response {:problem-names problem-names})))

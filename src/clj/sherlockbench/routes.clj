@@ -192,15 +192,17 @@
 
         ;; developer operations. these mark the run_type as developer
         ["developer/"
-         {:middleware [output-to-json
-                       wrap-problems
-                       api/wrap-set-developer]}
+         {:middleware [api/wrap-set-developer]}
          ["reset-attempt"
           {:post {:handler api/reset-attempt
                   :middleware [api/wrap-check-run
                                api/wrap-check-attempt]
                   :validation {:run-id ::uuid
-                               :attempt-id ::uuid}}}]]]]
+                               :attempt-id ::uuid}}}]
+         ["problem-names"
+          {:post {:handler api/get-problem-names
+                  :middleware [api/wrap-check-run]
+                  :validation {:run-id ::uuid}}}]]]]
 
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion

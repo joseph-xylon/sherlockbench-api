@@ -268,7 +268,31 @@ Resets an attempt to its initial state, allowing retries.
 **Errors**
 - 412: Invalid run or attempt ID
 
-**Note**: Using this endpoint will change the run's type to "developer", marking it as non-official.
+#### `POST /api/developer/problem-names`
+
+Gets the names of all problems for a given run.
+
+**Request Body**
+```json
+{
+  "run-id": "<uuid>"
+}
+```
+
+**Response (200)**
+```json
+{
+  "problem-names": [
+    {"id": "<uuid>", "function_name": "<string>"},
+    ...
+  ]
+}
+```
+
+**Errors**
+- 412: Invalid run ID
+
+**Note**: Using these endpoints will change the run's type to "developer", marking it as non-official.
 
 ## Error Codes
 
