@@ -103,7 +103,11 @@
        (from :runs)
        (where [:and
                [:= :id [:cast run-id :uuid]]
-               [:> [:+ :datetime_start [:interval "1 day"]] [:now]]
+               [:> [:+ :datetime_start 
+                    [:case 
+                     [:= :run_type [:cast "official" :run_type_type]] [:interval "1 day"]
+                     :else [:interval "3 days"]]] 
+                [:now]]
                [:!= :run_state [:cast "complete" :run_state_type]]]))
 
    (comp not empty?)])
