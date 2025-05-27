@@ -111,3 +111,16 @@
          :headers {"Content-Type" "text/html"
                    "HX-Trigger" "clearform"}
          :body rendered}))))
+
+(defn healthcheck-handler
+  "database health check"
+  [{queryfn :queryfn}]
+  (try
+    (let [result (queryfn (q/db-healthcheck))]
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body result})
+    (catch Exception e
+      {:status 503
+       :headers {"Content-Type" "application/json"}
+       :body {:status "error" :database "disconnected" :error (.getMessage e)}})))

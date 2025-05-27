@@ -309,3 +309,11 @@
        (where [:= :id [:cast attempt-id :uuid]]))
    
    identity])
+
+(defn db-healthcheck
+  "Simple database connectivity check"
+  []
+  [(-> (select [1 :status])
+       (limit 1))
+   
+   (comp (constantly {:status "ok" :database "connected"}) first)])

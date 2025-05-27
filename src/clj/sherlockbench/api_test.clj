@@ -28,7 +28,8 @@
     (pprint parsed-body)))
 
 (comment
-  (get-api "problem-sets") 
+  (get-api "problem-sets")
+  (get-api "healthcheck")
   (post-api "is-pending-run" {"run-id" "4681dd64-c1df-4511-9bad-d4127bd9aa1e"})
   (post-api "start-run" {"client-id" "api_test.clj"
                          "problem-set" "sherlockbench.sample-problems/easy3"})

@@ -143,6 +143,9 @@
        ["/api/"
         {:middleware [output-to-json
                       wrap-problems]}
+        ["healthcheck"
+         {:get {:handler hl/healthcheck-handler}}]
+        
         ["problem-sets"
          {:get {:handler api/list-problem-sets}}]
          
