@@ -71,16 +71,16 @@
     all-problems))
 
 (defn filter-by-name
-  "Returns a vector of maps from coll where the namespace and name match.
-   For each value in values, finds the first matching problem."
+  "Returns a vector containing, for each element of `values`,
+   the first map in `coll` whose [(str namespace) name-] equals that value.
+   Throws if a value has no corresponding map."
   [coll values]
-  (vec
-   (for [v values
-         :let [match (first (filter (fn [{:keys [namespace name-]}]
-                                      (= v (list (str namespace) name-)))
-                                    coll))]
-         :when match]
-     match)))
+  (mapv
+    (fn [v]
+      (or (some #(when (= v [(str (:namespace %)) (:name- %)]) %) coll)
+          (print "Error assembling problam-sets.\n")
+          (print (str "No match for " v "\n"))))
+    values))
 
 (defn filter-by-tags
   "Returns problems that match any of the given tags, with duplicates removed"
