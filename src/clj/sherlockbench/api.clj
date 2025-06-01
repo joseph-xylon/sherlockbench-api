@@ -66,6 +66,7 @@
                         :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
                     {:attempt-id id
                      :arg-spec (:args p)
+                     :output-type (:output-type p)
                      :test-limit test_limit
                      :attempts-remaining test_limit}))]
     [run-id attempts]))
@@ -116,10 +117,12 @@
           problems' (problems-by-run-id queryfn problems existing-run-id)
           ;; map over attempts, replacing :function_name with fn args
           attempts' (for [{:keys [id function_name test_limit]} attempts]
-                      {:attempt-id id
-                       :arg-spec (:args (get-problem-by-name problems' function_name))
-                       :test-limit test_limit
-                       :attempts-remaining test_limit})]
+                      (let [p (get-problem-by-name problems' function_name)]
+                        {:attempt-id id
+                         :arg-spec (:args p)
+                         :output-type (:output-type p)
+                         :test-limit test_limit
+                         :attempts-remaining test_limit}))]
 
       (api-response {:run-id existing-run-id
                      :run-type "competition"

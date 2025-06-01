@@ -100,7 +100,7 @@
       {:status 400
        :headers {"Content-Type" "text/html"}
        :body (str (h/html [:p.error (str "Invalid exam set: " exam-set)]))}
-      (let [[run-id attempts] (api/create-run queryfn problems nil "pending" pset-kw)
+      (let [[run-id attempts] (api/create-run queryfn problems nil "pending" pset-kw 1)
            
             ;; now render the page
             runs (queryfn (q/list-runs))
