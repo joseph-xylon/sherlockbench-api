@@ -5,7 +5,8 @@
             [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [clojure.pprint :refer [pprint]]
-            [sherlockbench.utility :as util]))
+            [sherlockbench.utility :as util]
+            [sherlockbench.random-investigation :as rand-inv]))
 
 ;; Common response helpers
 (defn api-response
@@ -354,3 +355,16 @@
     {:keys [run-id]} :body}]
   (let [problem-names (queryfn (q/get-names-and-ids run-id))]
     (api-response {:problem-names problem-names})))
+
+(defn random-investigation
+  "Generate random inputs for the function, evaluate them and return."
+  [{queryfn :queryfn
+    problems :problems
+    fn-name :fn-name
+    {:keys [run-id attempt-id]} :body}]
+
+  (let [problems' (problems-by-run-id queryfn problems run-id)
+        {:keys [args function test-limit]} (get-problem-by-name problems' fn-name)
+        output (rand-inv/random-fn-inputs args function test-limit)]
+
+        (api-response {:output output})))

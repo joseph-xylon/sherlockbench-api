@@ -292,6 +292,35 @@ Gets the names of all problems for a given run.
 **Errors**
 - 412: Invalid run ID
 
+#### `POST /api/developer/random-investigation`
+
+Generates random inputs for a function and returns the function's outputs for investigation.
+
+**Request Body**
+```json
+{
+  "run-id": "<uuid>",
+  "attempt-id": "<uuid>"
+}
+```
+
+**Response (200)**
+```json
+{
+  "output": "formatted string of (input) → output pairs"
+}
+```
+
+**Example Response**
+```json
+{
+  "output": "(\"apple\", 42, True) → \"processed result\"\n(\"banana\", 17, False) → \"another result\"\n(\"cherry\", 88, True) → \"third result\"\n(\"date\", 3, False) → \"fourth result\"\n(\"elderberry\", 55, True) → \"fifth result\""
+}
+```
+
+**Errors**
+- 412: Invalid run or attempt ID
+
 **Note**: Using these endpoints will change the run's type to "developer", marking it as non-official.
 
 ## Error Codes

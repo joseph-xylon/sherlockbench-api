@@ -205,7 +205,14 @@
          ["problem-names"
           {:post {:handler api/get-problem-names
                   :middleware [api/wrap-check-run]
-                  :validation {:run-id ::uuid}}}]]]]
+                  :validation {:run-id ::uuid}}}]
+
+         ["random-investigation"
+          {:post {:handler api/random-investigation
+                  :middleware [api/wrap-check-run
+                               api/wrap-check-attempt]
+                  :validation {:run-id ::uuid
+                               :attempt-id ::uuid}}}]]]]
 
       ;; router data affecting all routes
       {:data {:coercion   reitit.coercion.spec/coercion

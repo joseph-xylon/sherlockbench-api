@@ -31,11 +31,15 @@
   (get-api "problem-sets")
   (get-api "healthcheck")
   (post-api "is-pending-run" {"run-id" "4681dd64-c1df-4511-9bad-d4127bd9aa1e"})
+
   (post-api "start-run" {"client-id" "api_test.clj"
                          "problem-set" "sherlockbench.sample-problems/easy3"})
   (post-api "start-run" {"client-id" "api_test.clj"
+                         "problem-set" "sherlock1/all"})
+  (post-api "start-run" {"client-id" "api_test.clj"
                          "existing-run-id" ""
                          })
+
   (post-api "test-function" {:run-id "72f29a88-afa0-413a-b7b6-658177a2c757"
                              :attempt-id "07158652-9a4c-41bd-9a81-e054b328c659"
                              :args [9 4 3]})
@@ -45,6 +49,8 @@
                                     :attempt-id "01071213-ba72-4be5-9616-673ccab24428"
                                     :prediction 5})
   (post-api "developer/problem-names" {:run-id "72f29a88-afa0-413a-b7b6-658177a2c757"})
+  (post-api "developer/random-investigation" {:run-id "ff67bb1f-ab74-463e-8f6e-9ab6fc566a78"
+                                              :attempt-id "94d60759-59f5-4d17-9aeb-65bfa365bfd4"})
   (post-api "complete-run" {:run-id "8918d432-e80c-491e-b5a0-a40006fa1ff7"})
   
   )
