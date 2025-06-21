@@ -6,7 +6,8 @@
   ["apple" "banana" "cherry" "date" "elderberry" "fig" "grape"
    "honeydew" "kiwi" "lemon" "mango" "nectarine" "orange" "papaya"
    "quince" "raspberry" "strawberry" "tangerine" "ugli" "vanilla"
-   "watermelon" "xigua" "yam" "zucchini"])
+   "watermelon" "xigua" "yam" "zucchini" "cat" "parrot" "dolphin" "shark"
+   "whale" "savanna"])
 
 (defn- generate-random-value
   "Generates a single random value based on a type string."
