@@ -7,13 +7,14 @@
    "honeydew" "kiwi" "lemon" "mango" "nectarine" "orange" "papaya"
    "quince" "raspberry" "strawberry" "tangerine" "ugli" "vanilla"
    "watermelon" "xigua" "yam" "zucchini" "cat" "parrot" "dolphin" "shark"
-   "whale" "savanna"])
+   "whale" "savanna" "lantern" "whistle" "velvet" "glacier" "orbit" "sparrow" "crumble"
+   "flicker" "prism" "crisp" "marble" "drift" "pocket" "loom" "sprinkle" "banner"])
 
 (defn- generate-random-value
   "Generates a single random value based on a type string."
   [type-str]
   (case type-str
-    "integer" (rand-int 100)
+    "integer" (rand-nth [(rand-int 100) (rand-int 20)])
     "string" (rand-nth dictionary-words)
     "boolean" (rand-nth [true false])
     (throw (IllegalArgumentException. (str "Unknown type spec: " type-str)))))
