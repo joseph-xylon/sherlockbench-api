@@ -20,6 +20,10 @@ This app is written in Clojure with the following stack:
 
 ## Development
 
+The following instructions cover running SherlockBench for local development or
+testing. If you prefer a video, this covers running it on Ubuntu:
+[Installing SherlockBench API](https://youtu.be/bY0RvD_iU9I).
+
 Install:
 - clojure
 - npm
