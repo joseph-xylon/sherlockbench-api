@@ -20,6 +20,11 @@ This app is written in Clojure with the following stack:
 
 ## Development
 
+Install:
+- clojure
+- npm
+- redis
+
 In `resources/` add a config.edn. This file can just be an empty map `{}` but
 here is a more fleshed-out example:
 ```
@@ -55,7 +60,7 @@ Now migrate your database. Fire up repl and run this in your `user` namespace:
 (migrate)
 ```
 
-Now add your dev admin user:
+If you want to use the web front-end, add an admin user:
 ```
 (query (q/create-user "testuser" "testpass"))
 ```
