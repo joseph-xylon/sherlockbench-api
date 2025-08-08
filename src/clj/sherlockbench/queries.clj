@@ -87,14 +87,22 @@
 
 (defn create-attempt!
   [run-id problem]
-  [(-> (insert-into :attempts)
-       (values [{:run_id run-id
-                 :function_name (:name- problem)
-                 :verifications [:cast (json/write-str (:verifications problem)) :jsonb]
-                 :test_limit (or (:test-limit problem) default-test-limit)}])
-       (returning :id :test_limit))
+  (let [initfn (:initfn problem)
+        state (if initfn
+                (initfn)
+                {})
+        verifications (if initfn
+                        ((:verifications problem) state)
+                        (:verifications problem))]
+    [(-> (insert-into :attempts)
+         (values [{:run_id run-id
+                   :function_name (:name- problem)
+                   :pstate [:cast (json/write-str state) :jsonb]
+                   :verifications [:cast (json/write-str verifications) :jsonb]
+                   :test_limit (or (:test-limit problem) default-test-limit)}])
+         (returning :id :test_limit))
 
-   (comp #(select-keys % [:id :test_limit]) first)])
+     (comp #(select-keys % [:id :test_limit]) first)]))
 
 (defn active-run?
   "return true or false indicating if they have an id for a non-completed run"
