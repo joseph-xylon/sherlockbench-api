@@ -320,15 +320,23 @@
 
 (defn reset-attempt!
   "Reset all mutable fields for an attempt to their initial state."
-  [attempt-id original-verifications]
-  [(-> (update :attempts)
-       (set {:verifications [:cast (json/write-str original-verifications) :jsonb]
-             :result_value nil
-             :fn_calls 0
-             :started_verifications false})
-       (where [:= :id [:cast attempt-id :uuid]]))
-   
-   identity])
+  [attempt-id problem]
+  (let [initfn (:initfn problem)
+        state (if initfn
+                (initfn)
+                {})
+        verifications (if initfn
+                        ((:verifications problem) state)
+                        (:verifications problem))]
+    [(-> (update :attempts)
+         (set {:pstate [:cast (json/write-str state) :jsonb]
+               :verifications [:cast (json/write-str verifications) :jsonb]
+               :result_value nil
+               :fn_calls 0
+               :started_verifications false})
+         (where [:= :id [:cast attempt-id :uuid]]))
+     
+     identity]))
 
 (defn db-healthcheck
   "Simple database connectivity check"

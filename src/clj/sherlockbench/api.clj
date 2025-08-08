@@ -345,11 +345,10 @@
   ;; Get the original verifications from the problem definition
   (let [fn-name (queryfn (q/get-fn-name attempt-id))
         problems' (problems-by-run-id queryfn problems run-id)
-        problem (get-problem-by-name problems' fn-name)
-        original-verifications (:verifications problem)]
+        problem (get-problem-by-name problems' fn-name)]
     
     ;; Reset all mutable fields for the attempt
-    (queryfn (q/reset-attempt! attempt-id original-verifications))
+    (queryfn (q/reset-attempt! attempt-id problem))
     
     (api-response {:status "success"
                    :message "Attempt has been reset"})))
