@@ -170,6 +170,14 @@
 
    (comp #(select-keys % [:fn_calls :test_limit]) first)])
 
+(defn get-problem-state
+  "Increments the fn_calls column for a given attempt ID and returns fn_calls and test_limit."
+  [attempt-id]
+  [(-> (select :pstate)
+       (from :attempts)
+       (where [:= :id [:cast attempt-id :uuid]]))
+
+   (comp #(json/read-str (.getValue %) :key-fn keyword) :pstate first)])
 
 (defn started-verifications?
   "Given an attempt UUID, returns if it started verifications yet."

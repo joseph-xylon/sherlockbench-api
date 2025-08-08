@@ -185,10 +185,15 @@
           (api-response 400 {:error "your arguments don't comply with the schema"}))))))
 
 (defn apply-fn
-  [problem validated-args]
-  (try (apply (:function problem) validated-args)
-       (catch Exception e
-         "Exception")))
+  [queryfn attempt-id problem validated-args]
+  (let [problem-state (queryfn (q/get-problem-state attempt-id))
+        problem-fn (if (not (empty? problem-state)) ; if we're using function state
+                         (partial (:function problem) problem-state)
+                         (:function problem))]
+    (try (apply problem-fn validated-args)
+         (catch Exception e
+           ;; (println e)
+           "Exception"))))
 
 (defn test-function
   "run the test"
@@ -211,7 +216,7 @@
       :else
       (let [problems' (problems-by-run-id queryfn problems run-id)
             problem (get-problem-by-name problems' fn-name)
-            output (apply-fn problem validated-args)]
+            output (apply-fn queryfn attempt-id problem validated-args)]
 
         (api-response {:output output
                        :attempts_remaining remaining-attempts
@@ -268,7 +273,7 @@
         [this-verification remaining-verifications] (pop-verification queryfn attempt-id)]
     (if (nil? this-verification)
       (api-response 400 {:error "you're done"})
-      (let [output (apply-fn problem this-verification)]
+      (let [output (apply-fn queryfn attempt-id problem this-verification)]
         (if (=normalized prediction output)
           (if remaining-verifications
             ;; success with more
