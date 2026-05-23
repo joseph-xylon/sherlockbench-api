@@ -155,7 +155,7 @@
   [(-> (select [:*])
        (from :attempts)
        (where [:and
-               [:= :run-id [:cast run-id :uuid]]
+               [:= :run_id [:cast run-id :uuid]]
                [:= :id [:cast attempt-id :uuid]]]))
 
    (comp not empty?)])

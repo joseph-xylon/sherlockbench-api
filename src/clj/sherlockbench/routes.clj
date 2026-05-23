@@ -31,6 +31,11 @@
 
 (s/def ::uuid (s/and string? api/valid-uuid?))
 
+(s/def ::client-id
+  (s/and string?
+         #(<= 1 (count %) 100)
+         #(re-matches #"[A-Za-z0-9 ._@:/-]+" %)))
+
 (defn wrap-auth [handler]
   (fn [{:keys [uri query-string session] :as request}]
     (if (contains? session :user)
@@ -155,7 +160,7 @@
 
         ["start-run"
          {:post {:handler api/start-run
-                 :validation {:client-id ::string
+                 :validation {:client-id ::client-id
                               :existing-run-id ::anything
                               :problem-set ::anything
                               :attempts-per-problem ::optional-int}}}]
