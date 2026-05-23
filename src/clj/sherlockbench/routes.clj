@@ -234,8 +234,11 @@
 
        :reitit.ring/default-options-endpoint
        {:no-doc true
-        :handler (fn [request]
-                  {:status 200, :body "", :headers {"Allow" "POST,OPTIONS"
-                                                    "Access-Control-Allow-Origin" "*"
-                                                    "Access-Control-Allow-Headers" "*"}})}})
+        :handler (fn [{:keys [uri] :as request}]
+                  (let [api-path? (and uri (str/starts-with? uri "/api/"))]
+                    {:status 200
+                     :body ""
+                     :headers (cond-> {"Allow" "POST,OPTIONS"}
+                                api-path? (assoc "Access-Control-Allow-Origin" "*"
+                                                 "Access-Control-Allow-Headers" "*"))}))}})
      hl/not-found-handler)))
