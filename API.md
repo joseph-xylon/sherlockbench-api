@@ -82,9 +82,13 @@ Starts a new run, either anonymous or using existing run ID.
 ```json
 {
   "client-id": "<string>",
-  "problem-set": "<string>"
+  "problem-set": "<string>",
+  "attempts-per-problem": <number>
 }
 ```
+
+`attempts-per-problem` is optional (defaults to 1). It only applies to
+anonymous runs; each problem in the set is repeated this many times.
 
 **Response (200)**
 ```json
@@ -96,6 +100,7 @@ Starts a new run, either anonymous or using existing run ID.
     {
       "attempt-id": "<uuid>",
       "arg-spec": "<schema>",
+      "output-type": "<string>",
       "test-limit": <number>,
       "attempts-remaining": <number>
     }
@@ -329,3 +334,4 @@ Generates random inputs for a function and returns the function's outputs for in
 - 400: Bad request (invalid parameters)
 - 403: Forbidden (anonymous runs disabled)
 - 412: Precondition failed (invalid session state)
+- 503: Service unavailable (database disconnected)
