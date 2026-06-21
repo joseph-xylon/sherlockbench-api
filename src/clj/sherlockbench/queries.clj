@@ -86,10 +86,10 @@
       true)])
 
 (defn create-attempt!
-  [run-id problem]
+  [run-id problem rng]
   (let [initfn (:initfn problem)
         state (if initfn
-                (initfn)
+                (initfn rng)
                 {})
         verifications (if initfn
                         ((:verifications problem) state)
@@ -320,10 +320,10 @@
 
 (defn reset-attempt!
   "Reset all mutable fields for an attempt to their initial state."
-  [attempt-id problem]
+  [attempt-id problem rng]
   (let [initfn (:initfn problem)
         state (if initfn
-                (initfn)
+                (initfn rng)
                 {})
         verifications (if initfn
                         ((:verifications problem) state)

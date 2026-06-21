@@ -6,6 +6,7 @@
             [clojure.tools.logging :as log]
             [clojure.pprint :refer [pprint]]
             [sherlockbench.utility :as util]
+            [sherlockbench.random :as random]
             [sherlockbench.random-investigation :as rand-inv]))
 
 ;; Common response helpers
@@ -52,7 +53,11 @@
         run-type (case run-state
                    "pending" "official"
                    "started" "anonymous")
-        problems' (flatten (repeat attempts-per-problem (get-problem-set problems pset-kw)))
+        problem-set (get-in (apply merge (vals problems)) [pset-kw])
+        ;; a configured :seed makes procedural generation reproducible; one rng
+        ;; is shared across the run so the whole set is deterministic
+        rng (random/make-rng (:seed problem-set))
+        problems' (flatten (repeat attempts-per-problem (:problems problem-set)))
         now (java.time.LocalDateTime/now)
         config {}
         run-id (queryfn (q/create-run! benchmark-version
@@ -64,7 +69,7 @@
                                        (when (= run-type "anonymous") now)))
         attempts (doall
                   (for [p problems'    ; 1 attempt per problem
-                        :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p))]]
+                        :let [{:keys [id test_limit]} (queryfn (q/create-attempt! run-id p rng))]]
                     {:attempt-id id
                      :arg-spec (:args p)
                      :output-type (:output-type p)
@@ -344,11 +349,14 @@
   
   ;; Get the original verifications from the problem definition
   (let [fn-name (queryfn (q/get-fn-name attempt-id))
-        problems' (problems-by-run-id queryfn problems run-id)
-        problem (get-problem-by-name problems' fn-name)]
-    
+        pset-kw (keyword (queryfn (q/get-run-pset run-id)))
+        problem-set (get-in (apply merge (vals problems)) [pset-kw])
+        problem (get-problem-by-name (:problems problem-set) fn-name)
+        ;; reseed so a seeded set regenerates the same instance on reset
+        rng (random/make-rng (:seed problem-set))]
+
     ;; Reset all mutable fields for the attempt
-    (queryfn (q/reset-attempt! attempt-id problem))
+    (queryfn (q/reset-attempt! attempt-id problem rng))
     
     (api-response {:status "success"
                    :message "Attempt has been reset"})))

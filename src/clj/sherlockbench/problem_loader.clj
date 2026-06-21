@@ -98,13 +98,15 @@
                        matching-problems)))))
 
 (defn custom-rfn
-  "custom problem-sets are made-up of lists of tags or problem names"
-  [ns-problems acc name {:keys [tags names]}]
+  "custom problem-sets are made-up of lists of tags or problem names. An
+   optional :seed makes any procedural generation in the set reproducible."
+  [ns-problems acc name {:keys [tags names seed]}]
   (let [flat-problems (flatten-problems ns-problems)
         problems (concat (filter-by-name flat-problems names)
                          (filter-by-tags flat-problems tags))]
-    (assoc acc (string-to-tag name) {:name name
-                                     :problems problems})))
+    (assoc acc (string-to-tag name) (cond-> {:name name
+                                             :problems problems}
+                                      seed (assoc :seed seed)))))
 
 (defn assemble-custom-problem-sets
   [custom-problem-sets namespace-problems]
