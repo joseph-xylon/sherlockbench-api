@@ -85,15 +85,25 @@
       false
       true)])
 
+(defn- initial-state
+  "Build the persisted per-attempt state for a problem."
+  [problem rng]
+  (if-let [initfn (:initfn problem)]
+    (initfn rng)
+    {}))
+
+(defn- initial-verifications
+  "Resolve fixed or state-derived verification inputs."
+  [problem state]
+  (let [verifications (:verifications problem)]
+    (if (c/fn? verifications)
+      (verifications state)
+      verifications)))
+
 (defn create-attempt!
   [run-id problem rng]
-  (let [initfn (:initfn problem)
-        state (if initfn
-                (initfn rng)
-                {})
-        verifications (if initfn
-                        ((:verifications problem) state)
-                        (:verifications problem))]
+  (let [state (initial-state problem rng)
+        verifications (initial-verifications problem state)]
     [(-> (insert-into :attempts)
          (values [{:run_id run-id
                    :function_name (:name- problem)
@@ -321,13 +331,8 @@
 (defn reset-attempt!
   "Reset all mutable fields for an attempt to their initial state."
   [attempt-id problem rng]
-  (let [initfn (:initfn problem)
-        state (if initfn
-                (initfn rng)
-                {})
-        verifications (if initfn
-                        ((:verifications problem) state)
-                        (:verifications problem))]
+  (let [state (initial-state problem rng)
+        verifications (initial-verifications problem state)]
     [(-> (update :attempts)
          (set {:pstate [:cast (json/write-str state) :jsonb]
                :verifications [:cast (json/write-str verifications) :jsonb]
