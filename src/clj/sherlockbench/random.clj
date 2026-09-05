@@ -9,7 +9,8 @@
    To support that, an `initfn` takes a single `rng` argument and draws its
    randomness from the helpers below rather than from clojure.core directly:
 
-       :initfn (fn [rng] {:code [(rnd/rand-int rng 9) (rnd/rand-int rng 9)]})
+       :initfn (fn [rng] {:code [(rnd/rand-range rng 0 9)
+                                 (rnd/rand-range rng 0 9)]})
 
    The `rng` is a java.util.Random built from the problem-set's seed (shared
    across all attempts in the run, so the whole set is reproducible). When no
@@ -27,17 +28,24 @@
   ([rng] (if rng (.nextDouble ^java.util.Random rng) (clojure.core/rand)))
   ([rng n] (* n (rand rng))))
 
-(defn rand-int
-  "Like clojure.core/rand-int, drawing from `rng` when one is supplied."
-  [rng n]
+(defn rand-range
+  "Return a random integer from `min` inclusive to `max` exclusive, drawing
+   from `rng` when one is supplied."
+  [rng min max]
   (if rng
-    (.nextInt ^java.util.Random rng (int n))
-    (clojure.core/rand-int n)))
+    (+ min (.nextInt ^java.util.Random rng (int (- max min))))
+    (+ min (clojure.core/rand-int (- max min)))))
+
+(defn rand-int
+  "Compatibility wrapper for the old helper name. Like clojure.core/rand-int,
+   drawing from `rng` when one is supplied."
+  [rng n]
+  (rand-range rng 0 n))
 
 (defn rand-nth
   "Like clojure.core/rand-nth, drawing from `rng` when one is supplied."
   [rng coll]
-  (nth coll (rand-int rng (count coll))))
+  (nth coll (rand-range rng 0 (count coll))))
 
 (def ^:private token-alphabet
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

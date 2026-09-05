@@ -11,21 +11,29 @@
 (deftest determinism-test
   (testing "same seed produces the same sequence"
     (let [draw (fn [seed] (let [rng (rnd/make-rng seed)]
-                            (repeatedly 10 #(rnd/rand-int rng 100))))]
+                            (repeatedly 10 #(rnd/rand-range rng 0 100))))]
       (is (= (draw 42) (draw 42)))))
 
   (testing "different seeds (very probably) differ"
     (let [draw (fn [seed] (let [rng (rnd/make-rng seed)]
-                            (repeatedly 10 #(rnd/rand-int rng 100))))]
+                            (repeatedly 10 #(rnd/rand-range rng 0 100))))]
       (is (not= (draw 1) (draw 2)))))
 
-  (testing "rand-int stays within bounds"
+  (testing "rand-range stays within bounds"
     (let [rng (rnd/make-rng 7)]
-      (is (every? #(< -1 % 100) (repeatedly 100 #(rnd/rand-int rng 100)))))))
+      (is (every? #(< -1 % 100) (repeatedly 100 #(rnd/rand-range rng 0 100))))
+      (is (every? #(< -6 % 5) (repeatedly 100 #(rnd/rand-range rng -5 5)))))))
+
+(deftest rand-int-compatibility-test
+  (testing "old rand-int helper still delegates to the zero-based range"
+    (let [old-rng (rnd/make-rng 11)
+          new-rng (rnd/make-rng 11)]
+      (is (= (repeatedly 10 #(rnd/rand-int old-rng 100))
+             (repeatedly 10 #(rnd/rand-range new-rng 0 100)))))))
 
 (deftest fallback-test
   (testing "nil rng falls back to clojure.core and stays in bounds"
-    (is (every? #(< -1 % 10) (repeatedly 100 #(rnd/rand-int nil 10))))
+    (is (every? #(< -1 % 10) (repeatedly 100 #(rnd/rand-range nil 0 10))))
     (is (<= 0.0 (rnd/rand nil) 1.0))
     (is (contains? #{:a :b :c} (rnd/rand-nth nil [:a :b :c])))))
 
